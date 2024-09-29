@@ -241,12 +241,12 @@ public class LavaFlux extends LavaAbility implements AddonAbility {
 
 	private void expand(Block block) {
 		if (block != null && block.getY() > block.getWorld().getMinHeight() && block.getY() < block.getWorld().getMaxHeight() && !RegionProtection.isRegionProtected(this, block.getLocation())) {
-			if (EarthAbility.getMovedEarth().containsKey(block)){
-				Information info = EarthAbility.getMovedEarth().get(block);
-				if(!info.getBlock().equals(block)) {
-					return;
-				}
-			}
+//			if (EarthAbility.getMovedEarth().containsKey(block)){
+//				Information info = EarthAbility.getMovedEarth().get(block);
+//				if(!info.getBlock().equals(block)) {
+//					return;
+//				}
+//			}
 
 			if (isWater(block)) return;
 			while (!isEarthbendable(block)) {

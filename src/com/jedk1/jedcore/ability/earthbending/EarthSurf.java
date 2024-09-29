@@ -4,6 +4,9 @@ import com.jedk1.jedcore.JedCore;
 import com.jedk1.jedcore.configuration.JedCoreConfig;
 import com.jedk1.jedcore.util.MaterialUtil;
 import com.jedk1.jedcore.util.RegenTempBlock;
+import com.palmergames.bukkit.towny.TownyAPI;
+import com.palmergames.bukkit.towny.object.TownBlock;
+import com.palmergames.bukkit.towny.object.TownBlockType;
 import com.projectkorra.projectkorra.GeneralMethods;
 import com.projectkorra.projectkorra.ability.AddonAbility;
 import com.projectkorra.projectkorra.ability.EarthAbility;
@@ -11,6 +14,7 @@ import com.projectkorra.projectkorra.ability.ElementalAbility;
 import com.projectkorra.projectkorra.attribute.Attribute;
 import com.projectkorra.projectkorra.earthbending.passive.DensityShift;
 import com.projectkorra.projectkorra.region.RegionProtection;
+import com.projectkorra.projectkorra.region.Towny;
 import com.projectkorra.projectkorra.util.TempBlock;
 
 import com.projectkorra.projectkorra.util.TempFallingBlock;
@@ -28,6 +32,7 @@ import java.util.*;
 
 public class EarthSurf extends EarthAbility implements AddonAbility {
 	private static final double TARGET_HEIGHT = 1.5;
+	private static boolean townyEnabled = RegionProtection.getActiveProtections().values().stream().anyMatch(hook -> hook instanceof Towny);
 
 	private Location location;
 	private double prevHealth;
@@ -236,10 +241,21 @@ public class EarthSurf extends EarthAbility implements AddonAbility {
 				}
 
 				new TempFallingBlock(temp, getBlockBeneath(bL).getBlockData(), new Vector(0, 0.25, 0), this, true);
-				
-				for (Entity e : GeneralMethods.getEntitiesAroundPoint(loc.clone().add(0, -2.9, 0).toVector().add(location.clone().getDirection().multiply(distOffset)).toLocation(player.getWorld()), 1.5D)) {
-					if (e instanceof LivingEntity && e.getEntityId() != player.getEntityId()) {
-						e.setVelocity(new Vector(0, 0.3, 0));
+
+				boolean regionProtected = false;
+
+				if (townyEnabled) {
+					TownBlock townBlock = TownyAPI.getInstance().getTownBlock(player.getLocation());
+					if (townBlock != null && !townBlock.getType().equals(TownBlockType.ARENA)) {
+						regionProtected = true;
+					}
+				}
+
+				if (!regionProtected) {
+					for (Entity e : GeneralMethods.getEntitiesAroundPoint(loc.clone().add(0, -2.9, 0).toVector().add(location.clone().getDirection().multiply(distOffset)).toLocation(player.getWorld()), 1.5D)) {
+						if (e instanceof LivingEntity && e.getEntityId() != player.getEntityId()) {
+							e.setVelocity(new Vector(0, 0.3, 0));
+						}
 					}
 				}
 			}
@@ -277,7 +293,7 @@ public class EarthSurf extends EarthAbility implements AddonAbility {
 
 		super.remove();
 	}
-	
+
 	@Override
 	public long getCooldown() {
 		return cooldown;

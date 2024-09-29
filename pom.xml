@@ -13,6 +13,10 @@
       <id>spigot-repo</id>
       <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
     </repository>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
   </repositories>
 
   <dependencies>
@@ -25,9 +29,18 @@
     </dependency>
     <!-- ProjectKorra -->
     <dependency>
-      <groupId>com.projectkorra</groupId>
-      <artifactId>projectkorra</artifactId>
+      <groupId>com.github.ProjectKorra</groupId>
+      <artifactId>ProjectKorra</artifactId>
       <version>1.11.1</version>
+      <scope>system</scope>
+      <systemPath>${basedir}/libs/ProjectKorra-1.11.3.jar</systemPath>
+    </dependency>
+    <!-- Towny -->
+    <dependency>
+      <groupId>com.github.TownyAdvanced</groupId>
+      <artifactId>Towny</artifactId>
+      <version>0.98.3.0</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
