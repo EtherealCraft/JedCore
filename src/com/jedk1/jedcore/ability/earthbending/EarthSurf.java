@@ -13,8 +13,8 @@ import com.projectkorra.projectkorra.ability.EarthAbility;
 import com.projectkorra.projectkorra.ability.ElementalAbility;
 import com.projectkorra.projectkorra.attribute.Attribute;
 import com.projectkorra.projectkorra.earthbending.passive.DensityShift;
-import com.projectkorra.projectkorra.region.RegionProtection;
-import com.projectkorra.projectkorra.region.Towny;
+//import com.projectkorra.projectkorra.region.RegionProtection;
+//import com.projectkorra.projectkorra.region.Towny;
 import com.projectkorra.projectkorra.util.TempBlock;
 
 import com.projectkorra.projectkorra.util.TempFallingBlock;
@@ -32,7 +32,7 @@ import java.util.*;
 
 public class EarthSurf extends EarthAbility implements AddonAbility {
 	private static final double TARGET_HEIGHT = 1.5;
-	private static boolean townyEnabled = RegionProtection.getActiveProtections().values().stream().anyMatch(hook -> hook instanceof Towny);
+	//private static boolean townyEnabled = RegionProtection.getActiveProtections().values().stream().anyMatch(hook -> hook instanceof Towny);
 
 	private Location location;
 	private double prevHealth;
@@ -212,9 +212,9 @@ public class EarthSurf extends EarthAbility implements AddonAbility {
 				Block block = loc.clone().add(0, -3.9, 0).toVector().add(location.clone().getDirection().multiply(distOffset - 0.5)).toLocation(player.getWorld()).getBlock();
 				Location temp = loc.clone().add(0, -2.9, 0).toVector().add(location.clone().getDirection().multiply(distOffset)).toLocation(player.getWorld());
 
-				if (RegionProtection.isRegionProtected(this, block.getLocation())) {
-					continue;
-				}
+//				if (RegionProtection.isRegionProtected(this, block.getLocation())) {
+//					continue;
+//				}
 				// Don't render blocks above the player because it looks bad.
 				// TODO: Change this check to see if it's a reachable position instead.
 				if (block.getLocation().getY() > this.player.getLocation().getY()) {
@@ -244,12 +244,12 @@ public class EarthSurf extends EarthAbility implements AddonAbility {
 
 				boolean regionProtected = false;
 
-				if (townyEnabled) {
-					TownBlock townBlock = TownyAPI.getInstance().getTownBlock(player.getLocation());
-					if (townBlock != null && !townBlock.getType().equals(TownBlockType.ARENA)) {
-						regionProtected = true;
-					}
-				}
+//				if (townyEnabled) {
+//					TownBlock townBlock = TownyAPI.getInstance().getTownBlock(player.getLocation());
+//					if (townBlock != null && !townBlock.getType().equals(TownBlockType.ARENA)) {
+//						regionProtected = true;
+//					}
+//				}
 
 				if (!regionProtected) {
 					for (Entity e : GeneralMethods.getEntitiesAroundPoint(loc.clone().add(0, -2.9, 0).toVector().add(location.clone().getDirection().multiply(distOffset)).toLocation(player.getWorld()), 1.5D)) {

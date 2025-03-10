@@ -23,6 +23,7 @@ import com.projectkorra.projectkorra.event.*;
 import com.projectkorra.projectkorra.util.DamageHandler;
 import com.projectkorra.projectkorra.util.TempBlock;
 import com.projectkorra.projectkorra.waterbending.plant.PlantRegrowth;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -245,7 +246,7 @@ public class JCListener implements Listener {
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void onCooldownChange(PlayerCooldownChangeEvent event) {
 		if (event.getPlayer() == null) return;
-
+		if (!event.isOnline()) return;
 		// Fix a bug in ProjectKorra 1.8.4 that keeps IceWave around forever.
 		// It will continuously add a cooldown to WaterWave, which makes this spam tasks / scoreboard updates.
 		// It also happens with FastSwim when the player is a waterbender.
@@ -254,7 +255,8 @@ public class JCListener implements Listener {
 		}
 		new BukkitRunnable() {
 			public void run() {
-				BendingBoard.update(event.getPlayer());
+				Player player = Bukkit.getPlayer(event.getPlayer().getUniqueId());
+				if (player != null) BendingBoard.update(player);
 			}
 		}.runTaskLater(JedCore.plugin, 1);
 	}
@@ -271,9 +273,11 @@ public class JCListener implements Listener {
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void onElementChange(PlayerChangeElementEvent event){
 		if (event.getTarget() == null) return;
+		if (!event.isTargetOnline()) return;
 		new BukkitRunnable() {
 			public void run() {
-				BendingBoard.update(event.getTarget());
+				Player player = Bukkit.getPlayer(event.getTarget().getUniqueId());
+				if (player != null) BendingBoard.update(player);
 			}
 		}.runTaskLater(JedCore.plugin, 1);
 	}
