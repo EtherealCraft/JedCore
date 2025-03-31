@@ -245,8 +245,8 @@ public class JCListener implements Listener {
 
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void onCooldownChange(PlayerCooldownChangeEvent event) {
+		if (!BendingBoard.enabled) return;
 		if (event.getPlayer() == null) return;
-		if (!event.isOnline()) return;
 		// Fix a bug in ProjectKorra 1.8.4 that keeps IceWave around forever.
 		// It will continuously add a cooldown to WaterWave, which makes this spam tasks / scoreboard updates.
 		// It also happens with FastSwim when the player is a waterbender.
@@ -272,8 +272,8 @@ public class JCListener implements Listener {
 
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void onElementChange(PlayerChangeElementEvent event){
+		if (!BendingBoard.enabled) return;
 		if (event.getTarget() == null) return;
-		if (!event.isTargetOnline()) return;
 		new BukkitRunnable() {
 			public void run() {
 				Player player = Bukkit.getPlayer(event.getTarget().getUniqueId());
