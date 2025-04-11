@@ -135,11 +135,9 @@ public class LavaFlux extends LavaAbility implements AddonAbility {
 		Location origin = player.getLocation().add(0, -1, 0).add(blockdirection.multiply(2));
 		if (isEarthbendable(player, origin.getBlock())) {
 			BlockIterator bi = new BlockIterator(player.getWorld(), origin.toVector(), direction, 0, range);
-
 			while (bi.hasNext()) {
 				Block b = bi.next();
-
-				if (b.getY() > b.getWorld().getMinHeight() && b.getY() < b.getWorld().getMaxHeight() && !RegionProtection.isRegionProtected(this, b.getLocation()) && !EarthAbility.getMovedEarth().containsKey(b)) {
+				if (b.getY() > b.getWorld().getMinHeight() && b.getY() < b.getWorld().getMaxHeight() && !RegionProtection.isRegionProtected(this, b.getLocation())) {
 					if (isWater(b)) break;
 					while (!isEarthbendable(player, b)) {
 						b = b.getRelative(BlockFace.DOWN);
