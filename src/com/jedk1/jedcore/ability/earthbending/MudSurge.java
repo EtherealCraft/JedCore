@@ -288,7 +288,7 @@ public class MudSurge extends EarthAbility implements AddonAbility {
 		for (Location l : area) {
 			Block b = l.getBlock();
 
-			if (isMudBlock(b)) {
+			if (isEarthbendable(b)) {
 				if (isTransparent(b.getRelative(BlockFace.UP))) {
 					boolean water = true;
 
