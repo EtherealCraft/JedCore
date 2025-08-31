@@ -171,7 +171,7 @@ public class MudSurge extends EarthAbility implements AddonAbility {
 		Block block = getMudSourceBlock(prepareRange);
 
 		if (block != null) {
-			if (isMudBlock(block)) {
+			if (isEarthbendable(block)) {
 				boolean water = true;
 
 				if (wetSource) {
@@ -251,7 +251,7 @@ public class MudSurge extends EarthAbility implements AddonAbility {
 
 	private Block getMudSourceBlock(int range) {
 		Block testBlock = GeneralMethods.getTargetedLocation(player, range, ElementalAbility.getTransparentMaterials()).getBlock();
-		if (isMudBlock(testBlock))
+		if (isEarthbendable(testBlock))
 			return testBlock;
 
 		Location loc = player.getEyeLocation();
@@ -262,7 +262,7 @@ public class MudSurge extends EarthAbility implements AddonAbility {
 			if (RegionProtection.isRegionProtected(player, block.getLocation(), this))
 				continue;
 
-			if (isMudBlock(block))
+			if (isEarthbendable(block))
 				return block;
 		}
 
