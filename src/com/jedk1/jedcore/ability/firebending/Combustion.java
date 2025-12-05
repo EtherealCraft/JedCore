@@ -238,7 +238,7 @@ public class Combustion extends CombustionAbility implements AddonAbility {
 					currPoint = 0;
 				}
 
-				double angle = currPoint * 3.141592653589793D / 180.0D;
+				double angle = currPoint * Math.PI / 180.0D;
 				double x = size * Math.cos(angle);
 				double z = size * Math.sin(angle);
 
@@ -460,7 +460,7 @@ public class Combustion extends CombustionAbility implements AddonAbility {
 				return 0;
 			}
 
-			location.getWorld().createExplosion(location, 0.0F);
+			location.getWorld().createExplosion(location, 0.1F);
 			int destroyCount = destroyBlocks(location, (int)size);
 			damageEntities(location, size, damage, fireTick);
 

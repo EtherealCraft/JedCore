@@ -124,7 +124,7 @@ public class SpiritBeam extends AvatarAbility implements AddonAbility {
 			}
 
 			if (location.getBlock().getType().isSolid()) {
-				location.getWorld().createExplosion(location, 0F);
+				location.getWorld().createExplosion(location, 0.1F);
 				if (damagesBlocks) {
 					//new TempExplosion(player, location.getBlock(), "SpiritBeam", radius, regen, damage, false);
 					for (Location loc : GeneralMethods.getCircle(location, (int) radius, 0, false, true, 0)) {
