@@ -25,6 +25,7 @@ import com.projectkorra.projectkorra.util.TempBlock;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
@@ -460,7 +461,7 @@ public class Combustion extends CombustionAbility implements AddonAbility {
 				return 0;
 			}
 
-			location.getWorld().createExplosion(location, 0.1F);
+			location.getWorld().spawnParticle(Particle.EXPLOSION, location, 1);
 			int destroyCount = destroyBlocks(location, (int)size);
 			damageEntities(location, size, damage, fireTick);
 
