@@ -358,7 +358,7 @@ public class ElementSphere extends AvatarAbility implements AddonAbility, MultiA
 
 	@Override
 	public boolean requireAvatar() {
-		return false;
+		return true;
 	}
 	
 	@Override
