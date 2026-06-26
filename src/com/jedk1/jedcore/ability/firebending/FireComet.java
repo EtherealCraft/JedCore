@@ -12,11 +12,11 @@ import com.projectkorra.projectkorra.ability.FireAbility;
 import com.projectkorra.projectkorra.attribute.Attribute;
 import com.projectkorra.projectkorra.region.RegionProtection;
 import com.projectkorra.projectkorra.util.DamageHandler;
-import com.projectkorra.projectkorra.util.ParticleEffect;
 
 import com.projectkorra.projectkorra.util.TempFallingBlock;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.block.BlockState;
 import org.bukkit.configuration.ConfigurationSection;
@@ -218,7 +218,8 @@ public class FireComet extends FireAbility implements AddonAbility {
 		}
 
 		playFirebendingParticles(location, 20, Math.random(), Math.random(), Math.random());
-		ParticleEffect.FIREWORKS_SPARK.display(location, 20,  Math.random(), Math.random(), Math.random(), 0.5);
+
+		location.getWorld().spawnParticle(Particle.FIREWORK, location, 20,  Math.random(), Math.random(), Math.random(), 0.5);
 
 		JCMethods.emitLight(location);
 
@@ -266,8 +267,8 @@ public class FireComet extends FireAbility implements AddonAbility {
 //		}
 		playFirebendingParticles(location.clone().add(v), 1, 0, 0, 0);
 		playFirebendingParticles(location.clone().add(v1), 1, 0, 0, 0);
-		ParticleEffect.SMOKE_LARGE.display(location.clone().add(v), 1, 0, 0, 0, 0.02);
-		ParticleEffect.SMOKE_LARGE.display(location.clone().add(v1), 1, 0, 0, 0, 0.02);
+		location.getWorld().spawnParticle(Particle.LARGE_SMOKE, location.clone().add(v), 1, 0, 0, 0, 0.02);
+		location.getWorld().spawnParticle(Particle.LARGE_SMOKE, location.clone().add(v1), 1, 0, 0, 0, 0.02);
 
 		JCMethods.emitLight(location.clone().add(v));
 		JCMethods.emitLight(location.clone().add(v1));
@@ -293,7 +294,7 @@ public class FireComet extends FireAbility implements AddonAbility {
 		}
 
 		if (size == 1.5) {
-			ParticleEffect.EXPLOSION_LARGE.display(this.location, 3, Math.random(), Math.random(), Math.random(), 0.03);
+			this.location.getWorld().spawnParticle(Particle.EXPLOSION, this.location, 3, Math.random(), Math.random(), Math.random(), 0.03);
 		}
 	}
 
@@ -335,9 +336,8 @@ public class FireComet extends FireAbility implements AddonAbility {
 //			}
 			playFirebendingParticles(location.clone().add(v), 1, 0, 0, 0);
 			playFirebendingParticles(location.clone().add(v1), 1, 0, 0, 0);
-			ParticleEffect.SMOKE_LARGE.display(location.clone().add(v), 1, 0, 0, 0, 0.02);
-			ParticleEffect.SMOKE_LARGE.display(location.clone().add(v1), 1, 0, 0, 0, 0.02);
-
+			location.getWorld().spawnParticle(Particle.LARGE_SMOKE, location.clone().add(v), 1, 0, 0, 0, 0.02);
+			location.getWorld().spawnParticle(Particle.LARGE_SMOKE, location.clone().add(v1), 1, 0, 0, 0, 0.02);
 			JCMethods.emitLight(location.clone().add(v));
 			JCMethods.emitLight(location.clone().add(v1));
 		}

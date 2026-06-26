@@ -1,18 +1,25 @@
 package com.jedk1.jedcore.ability.firebending;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
-
 import com.jedk1.jedcore.JCMethods;
+import com.jedk1.jedcore.JedCore;
 import com.jedk1.jedcore.configuration.JedCoreConfig;
 import com.jedk1.jedcore.listener.CommandListener;
 import com.jedk1.jedcore.util.FireTick;
+import com.projectkorra.projectkorra.Element;
+import com.projectkorra.projectkorra.Element.SubElement;
+import com.projectkorra.projectkorra.GeneralMethods;
+import com.projectkorra.projectkorra.ability.AddonAbility;
+import com.projectkorra.projectkorra.ability.BlueFireAbility;
+import com.projectkorra.projectkorra.ability.FireAbility;
 import com.projectkorra.projectkorra.attribute.Attribute;
+import com.projectkorra.projectkorra.firebending.BlazeArc;
+import com.projectkorra.projectkorra.firebending.HeatControl;
 import com.projectkorra.projectkorra.region.RegionProtection;
 import com.projectkorra.projectkorra.util.ChatUtil;
+import com.projectkorra.projectkorra.util.DamageHandler;
+
+import com.projectkorra.projectkorra.util.TempBlock;
+import com.projectkorra.projectkorra.waterbending.ice.PhaseChange;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -23,18 +30,11 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
-import com.jedk1.jedcore.JedCore;
-import com.projectkorra.projectkorra.Element;
-import com.projectkorra.projectkorra.Element.SubElement;
-import com.projectkorra.projectkorra.GeneralMethods;
-import com.projectkorra.projectkorra.ability.AddonAbility;
-import com.projectkorra.projectkorra.ability.BlueFireAbility;
-import com.projectkorra.projectkorra.ability.FireAbility;
-import com.projectkorra.projectkorra.firebending.BlazeArc;
-import com.projectkorra.projectkorra.util.DamageHandler;
-import com.projectkorra.projectkorra.util.ParticleEffect;
-import com.projectkorra.projectkorra.util.TempBlock;
-import com.projectkorra.projectkorra.waterbending.ice.PhaseChange;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 
 public class FireBreath extends FireAbility implements AddonAbility {
 
@@ -49,9 +49,9 @@ public class FireBreath extends FireAbility implements AddonAbility {
 	@Attribute(Attribute.DURATION)
 	private long duration;
 	private int particles;
-	@Attribute(Attribute.DAMAGE)
+	@Attribute("Player" + Attribute.DAMAGE)
 	private double playerDamage;
-	@Attribute(Attribute.DAMAGE)
+	@Attribute("Mob" + Attribute.DAMAGE)
 	private double mobDamage;
 	@Attribute(Attribute.DURATION)
 	private int fireDuration;
@@ -60,6 +60,7 @@ public class FireBreath extends FireAbility implements AddonAbility {
 	private boolean spawnFire;
 	private boolean meltEnabled;
 	private int meltChance;
+	private boolean meltOnlyIce;
 
 
 	public FireBreath(Player player) {
@@ -95,6 +96,7 @@ public class FireBreath extends FireAbility implements AddonAbility {
 		range = config.getInt("Abilities.Fire.FireBreath.Range");
 		spawnFire = config.getBoolean("Abilities.Fire.FireBreath.Avatar.FireEnabled");
 		meltEnabled = config.getBoolean("Abilities.Fire.FireBreath.Melt.Enabled");
+		meltOnlyIce = config.getBoolean("Abilities.Fire.FireBreath.Melt.OnlyIce");
 		meltChance = config.getInt("Abilities.Fire.FireBreath.Melt.Chance");
 		
 		applyModifiers();
@@ -168,12 +170,13 @@ public class FireBreath extends FireAbility implements AddonAbility {
 			damageRegion += 0.01;
 			if (meltEnabled) {
 				for (Block b : GeneralMethods.getBlocksAroundPoint(loc, damageRegion)) {
-					if (isIce(b) && rand.nextInt(meltChance) == 0) {
-						if (TempBlock.isTempBlock(b)) {
+					if (rand.nextInt(meltChance) == 0) {
+						if (!meltOnlyIce) {
+							HeatControl.melt(player, b);
+						} else if (isIce(b) && TempBlock.isTempBlock(b)) {
 							TempBlock temp = TempBlock.get(b);
-							if (PhaseChange.getFrozenBlocksMap().containsKey(temp)) {
+							if (PhaseChange.getFrozenBlocksMap().remove(temp) != null) {
 								temp.revertBlock();
-								PhaseChange.getFrozenBlocksMap().remove(temp);
 							}
 						}
 					}
@@ -226,14 +229,15 @@ public class FireBreath extends FireAbility implements AddonAbility {
 				}
 			} else {
 				playFirebendingParticles(loc, particles, Math.random(), Math.random(), Math.random());
-				ParticleEffect.SMOKE_NORMAL.display(loc, particles, Math.random(), Math.random(), Math.random(), size);
+				loc.getWorld().spawnParticle(Particle.SMOKE, loc, particles, Math.random(), Math.random(), Math.random(), size);
 				JCMethods.emitLight(loc);
 			}
 		}
 	}
 
 	private void displayParticle(Location location, int amount, int r, int g, int b) {
-		ParticleEffect.REDSTONE.display(location, amount, 0, 0, 0, 0.005, new Particle.DustOptions(Color.fromRGB(r, g, b), 1));
+		Particle.DustOptions dustOptions = new Particle.DustOptions(Color.fromRGB(r, g, b), 1);
+		location.getWorld().spawnParticle(Particle.DUST, location, amount, 0, 0, 0, 0.005, dustOptions);
 		JCMethods.emitLight(location);
 	}
 

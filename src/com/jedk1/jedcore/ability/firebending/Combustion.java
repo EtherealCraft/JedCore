@@ -5,13 +5,16 @@ import com.jedk1.jedcore.JedCore;
 import com.jedk1.jedcore.collision.CollisionDetector;
 import com.jedk1.jedcore.collision.Sphere;
 import com.jedk1.jedcore.configuration.JedCoreConfig;
-import com.jedk1.jedcore.policies.removal.*;
+import com.jedk1.jedcore.policies.removal.CannotBendRemovalPolicy;
+import com.jedk1.jedcore.policies.removal.CompositeRemovalPolicy;
+import com.jedk1.jedcore.policies.removal.IsDeadRemovalPolicy;
+import com.jedk1.jedcore.policies.removal.IsOfflineRemovalPolicy;
+import com.jedk1.jedcore.policies.removal.SwappedSlotsRemovalPolicy;
 import com.jedk1.jedcore.util.FireTick;
-import com.jedk1.jedcore.util.LightManager;
 import com.jedk1.jedcore.util.MaterialUtil;
 import com.jedk1.jedcore.util.RegenTempBlock;
-import com.projectkorra.projectkorra.GeneralMethods;
 import com.projectkorra.projectkorra.Element.SubElement;
+import com.projectkorra.projectkorra.GeneralMethods;
 import com.projectkorra.projectkorra.ability.AddonAbility;
 import com.projectkorra.projectkorra.ability.AirAbility;
 import com.projectkorra.projectkorra.ability.CombustionAbility;
@@ -20,13 +23,9 @@ import com.projectkorra.projectkorra.ability.util.Collision;
 import com.projectkorra.projectkorra.attribute.Attribute;
 import com.projectkorra.projectkorra.region.RegionProtection;
 import com.projectkorra.projectkorra.util.DamageHandler;
-import com.projectkorra.projectkorra.util.ParticleEffect;
-import com.projectkorra.projectkorra.util.TempBlock;
 
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
+import com.projectkorra.projectkorra.util.TempBlock;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Entity;
@@ -34,9 +33,11 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class Combustion extends CombustionAbility implements AddonAbility {
 
@@ -45,6 +46,8 @@ public class Combustion extends CombustionAbility implements AddonAbility {
 	@Attribute(Attribute.COOLDOWN)
 	private long cooldown;
 	private CompositeRemovalPolicy removalPolicy;
+
+	private ArrayList<String> skipMaterials; // use a configured list of blocks to skip through
 
 	public Combustion(Player player) {
 		super(player);
@@ -82,6 +85,8 @@ public class Combustion extends CombustionAbility implements AddonAbility {
 		);
 
 		this.removalPolicy.load(config, "Abilities.Fire.Combustion");
+
+		this.skipMaterials = loadSkipMaterials();
 	}
 
 	@Override
@@ -172,6 +177,35 @@ public class Combustion extends CombustionAbility implements AddonAbility {
 		return config.getBoolean("Abilities.Fire.Combustion.Enabled");
 	}
 
+	private ArrayList<String> loadSkipMaterials() {
+		ConfigurationSection config = JedCoreConfig.getConfig(this.player);
+
+		ArrayList<String> skipList = new ArrayList<>();
+
+		if (config.contains("Abilities.Fire.Combustion.SkipMaterials")) {
+			List<String> configuredSkipList = config.getStringList("Abilities.Fire.Combustion.SkipMaterials");
+
+			for (String entry : configuredSkipList) {
+				if (entry.startsWith("#")) {
+					String tagName = entry.substring(1).toLowerCase();
+
+					NamespacedKey tagKey = NamespacedKey.minecraft(tagName);
+					Tag<Material> materialTag = Bukkit.getTag(Tag.REGISTRY_BLOCKS, tagKey, Material.class);
+
+					if (materialTag != null) {
+						skipList.addAll(materialTag.getValues().stream()
+								.map(material -> material.name().toLowerCase())
+								.collect(Collectors.toList()));
+					}
+				} else {
+					skipList.add(entry.toLowerCase());
+				}
+			}
+		}
+
+		return skipList;
+	}
+
 	private interface State {
 		void update();
 	}
@@ -219,7 +253,7 @@ public class Combustion extends CombustionAbility implements AddonAbility {
 				}
 
 				if (charged) {
-					ParticleEffect.SMOKE_LARGE.display(player.getLocation(), 1, Math.random(), Math.random(), Math.random(), 0.1);
+					player.getWorld().spawnParticle(Particle.LARGE_SMOKE, player.getLocation(), 1, Math.random(), Math.random(), Math.random(), 0.1);
 				}
 			} else {
 				if (charged) {
@@ -245,7 +279,7 @@ public class Combustion extends CombustionAbility implements AddonAbility {
 
 				Location loc = player.getLocation().add(x, 1.0D, z);
 				playFirebendingParticles(loc, 3, 0.0, 0.0, 0.0);
-				ParticleEffect.SMOKE_NORMAL.display(loc, 4, 0.0, 0.0, 0.0, 0.01);
+				player.getWorld().spawnParticle(Particle.LARGE_SMOKE, loc, 4, 0.0, 0.0, 0.0, 0.01);
 				JCMethods.emitLight(loc);
 			}
 		}
@@ -329,8 +363,15 @@ public class Combustion extends CombustionAbility implements AddonAbility {
 				}
 
 				if (!MaterialUtil.isTransparent(location.getBlock()) || isWater(location.getBlock())) {
-					state = new CombustState(location);
-					return;
+					Material blockMaterial = location.getBlock().getType();
+					String blockMaterialName = blockMaterial.name().toLowerCase();
+
+					boolean shouldSkip = skipMaterials.contains(blockMaterialName);
+
+					if (!shouldSkip) {
+						state = new CombustState(location);
+						return;
+					}
 				}
 
 				direction = player.getEyeLocation().getDirection().normalize();
@@ -347,15 +388,13 @@ public class Combustion extends CombustionAbility implements AddonAbility {
 
 		private void render() {
 			if (bPlayer.canUseSubElement(SubElement.BLUE_FIRE)) {
-				ParticleEffect.SOUL_FIRE_FLAME.display(location, 1, 0.0, 0.0, 0.0, 0.03);
+				location.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, location, 1, 0.0, 0.0, 0.0, 0.03);
 			} else {
-				ParticleEffect.FLAME.display(location, 1, 0.0, 0.0, 0.0, 0.03);
+				location.getWorld().spawnParticle(Particle.FLAME, location, 1, 0.0, 0.0, 0.0, 0.03);
 			}
-			ParticleEffect.SMOKE_LARGE.display(location, 1, 0.0, 0.0, 0.0F, 0.06);
-			ParticleEffect.FIREWORKS_SPARK.display(location, 1, 0.0, 0.0, 0.0F, 0.06);
-
+			location.getWorld().spawnParticle(Particle.LARGE_SMOKE, location, 1, 0.0, 0.0, 0.0, 0.06);
+			location.getWorld().spawnParticle(Particle.FIREWORK, location, 1, 0.0, 0.0, 0.0, 0.06);
 			location.getWorld().playSound(location, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 1.0F, 0.01F);
-
 			JCMethods.emitLight(location);
 		}
 	}
@@ -470,15 +509,14 @@ public class Combustion extends CombustionAbility implements AddonAbility {
 
 		private void render(Location location) {
 			if (bPlayer.canUseSubElement(SubElement.BLUE_FIRE)) {
-				ParticleEffect.SOUL_FIRE_FLAME.display(location, 20, Math.random(), Math.random(), Math.random(), 0.5);
+				location.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, location, 20, Math.random(), Math.random(), Math.random(), 0.5);
 			} else {
-				ParticleEffect.FLAME.display(location, 20, Math.random(), Math.random(), Math.random(), 0.5);
+				location.getWorld().spawnParticle(Particle.FLAME, location, 20, Math.random(), Math.random(), Math.random(), 0.5);
 			}
-			ParticleEffect.SMOKE_LARGE.display(location, 20, Math.random(), Math.random(), Math.random(), 0.5);
-			ParticleEffect.FIREWORKS_SPARK.display(location, 20, Math.random(), Math.random(), Math.random(), 0.5);
-			ParticleEffect.SMOKE_LARGE.display(location, 20, Math.random(), Math.random(), Math.random());
-			ParticleEffect.EXPLOSION_HUGE.display(location, 20, Math.random(), Math.random(), Math.random(), 0.5);
-
+			location.getWorld().spawnParticle(Particle.LARGE_SMOKE, location, 20, Math.random(), Math.random(), Math.random(), 0.5);
+			location.getWorld().spawnParticle(Particle.FIREWORK, location, 20, Math.random(), Math.random(), Math.random(), 0.5);
+			location.getWorld().spawnParticle(Particle.LARGE_SMOKE, location, 20, Math.random(), Math.random(), Math.random());
+			location.getWorld().spawnParticle(Particle.EXPLOSION, location, 20, Math.random(), Math.random(), Math.random(), 0.5);
 			location.getWorld().playSound(location, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
 		}
 

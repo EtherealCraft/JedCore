@@ -10,7 +10,6 @@ import com.projectkorra.projectkorra.ability.AirAbility;
 import com.projectkorra.projectkorra.ability.CoreAbility;
 import com.projectkorra.projectkorra.attribute.Attribute;
 import com.projectkorra.projectkorra.util.DamageHandler;
-
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
@@ -26,6 +25,12 @@ public class SonicBlast extends AirAbility implements AddonAbility {
 	private Vector direction;
 	private boolean isCharged;
 	private int travelled;
+	private int nauseaDur;
+	private int blindDur;
+	private boolean chargeSwapping;
+	private Sound sound;
+	private float volume;
+	private float pitch;
 
 	@Attribute(Attribute.DAMAGE)
 	private double damage;
@@ -37,9 +42,6 @@ public class SonicBlast extends AirAbility implements AddonAbility {
 	private long cooldown;
 	@Attribute("WarmUp")
 	private long warmup;
-	private int nauseaDur;
-	private int blindDur;
-	private boolean chargeSwapping;
 
 	public SonicBlast(Player player) {
 		super(player);
@@ -63,44 +65,64 @@ public class SonicBlast extends AirAbility implements AddonAbility {
 		chargeSwapping = config.getBoolean("Abilities.Air.SonicBlast.ChargeSwapping");
 		nauseaDur = config.getInt("Abilities.Air.SonicBlast.Effects.NauseaDuration");
 		blindDur = config.getInt("Abilities.Air.SonicBlast.Effects.BlindnessDuration");
+		volume = (float) config.getDouble("Abilities.Air.SonicBlast.Sound.Volume");
+		pitch = (float) config.getDouble("Abilities.Air.SonicBlast.Sound.Pitch");
+		try {
+			sound = Sound.valueOf(config.getString("Abilities.Air.SonicBlast.Sound.Name"));
+		} catch (final IllegalArgumentException exception) {
+			sound = Sound.ENTITY_GENERIC_EXPLODE;
+			JedCore.log.warning("Your current value for 'Properties.Air.Sound.Sound' is not valid.");
+		}
 	}
 
 	@Override
 	public void progress() {
-		if (player.isDead() || !player.isOnline()) {
-			remove();
+		if (!checkPlayerState()) {
 			return;
 		}
 
-		CoreAbility boundAbility = bPlayer.getBoundAbility();
-
-		if (!this.chargeSwapping && this.travelled == 0 && !(boundAbility instanceof SonicBlast)) {
+		if (!canStartAbility()) {
 			remove();
 			return;
 		}
 
 		if (player.isSneaking() && travelled == 0) {
-			direction = player.getEyeLocation().getDirection().normalize();
-
-			if (isCharged) {
-				playAirbendingParticles(player.getLocation().add(0, 1, 0), 5, (float) Math.random(), (float) Math.random(), (float) Math.random());
-			} else if (System.currentTimeMillis() > getStartTime() + warmup) {
-				isCharged = true;
-			}
+			handleCharging();
 		} else {
-			if (isCharged) {
-				if (!bPlayer.isOnCooldown(this)) {
-					bPlayer.addCooldown(this);
-				}
+			handleProgression();
+		}
+	}
 
-				if (travelled < range && isLocationSafe()) {
-					advanceLocation();
-				} else {
-					remove();
-				}
+	private boolean checkPlayerState() {
+		return !player.isDead() && player.isOnline();
+	}
+
+	private boolean canStartAbility() {
+		CoreAbility boundAbility = bPlayer.getBoundAbility();
+		return chargeSwapping || travelled > 0 || boundAbility instanceof SonicBlast;
+	}
+
+	private void handleCharging() {
+		direction = player.getEyeLocation().getDirection().normalize();
+		if (isCharged) {
+			playAirbendingParticles(player.getLocation().add(0, 1, 0), 5, (float) Math.random(), (float) Math.random(), (float) Math.random());
+		} else if (System.currentTimeMillis() > getStartTime() + warmup) {
+			isCharged = true;
+		}
+	}
+
+	private void handleProgression() {
+		if (isCharged) {
+			if (!bPlayer.isOnCooldown(this)) {
+				bPlayer.addCooldown(this);
+			}
+			if (travelled < range && isLocationSafe()) {
+				advanceLocation();
 			} else {
 				remove();
 			}
+		} else {
+			remove();
 		}
 	}
 
@@ -129,7 +151,7 @@ public class SonicBlast extends AirAbility implements AddonAbility {
 				playAirbendingParticles(temp, 1, 0, 0, 0);
 			}
 
-			boolean hit = CollisionDetector.checkEntityCollisions(player, new Sphere(location.toVector(), entityCollisionRadius), (entity) -> {
+			boolean hit = CollisionDetector.checkEntityCollisions(player, new Sphere(location.toVector(), entityCollisionRadius), entity -> {
 				DamageHandler.damageEntity(entity, damage, this);
 				LivingEntity lE = (LivingEntity) entity;
 
@@ -146,7 +168,7 @@ public class SonicBlast extends AirAbility implements AddonAbility {
 			location = location.add(direction.clone().multiply(0.2));
 		}
 
-		location.getWorld().playSound(location, Sound.ENTITY_GENERIC_EXPLODE, 1, 0);
+		location.getWorld().playSound(location, sound, volume, pitch);
 	}
 	
 	@Override

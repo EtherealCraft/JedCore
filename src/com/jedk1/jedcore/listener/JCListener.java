@@ -4,22 +4,26 @@ import com.jedk1.jedcore.JCMethods;
 import com.jedk1.jedcore.JedCore;
 import com.jedk1.jedcore.ability.chiblocking.Backstab;
 import com.jedk1.jedcore.ability.chiblocking.DaggerThrow;
-import com.jedk1.jedcore.ability.earthbending.*;
+import com.jedk1.jedcore.ability.earthbending.EarthSurf;
+import com.jedk1.jedcore.ability.earthbending.LavaDisc;
+import com.jedk1.jedcore.ability.earthbending.MetalFragments;
+import com.jedk1.jedcore.ability.earthbending.MetalShred;
+import com.jedk1.jedcore.ability.earthbending.MudSurge;
 import com.jedk1.jedcore.ability.earthbending.combo.MagmaBlast;
 import com.jedk1.jedcore.ability.firebending.FireBreath;
 import com.jedk1.jedcore.ability.firebending.FirePunch;
 import com.jedk1.jedcore.ability.firebending.FireSki;
 import com.jedk1.jedcore.ability.waterbending.IceClaws;
 import com.jedk1.jedcore.ability.waterbending.IceWall;
-import com.jedk1.jedcore.scoreboard.BendingBoard;
 import com.jedk1.jedcore.util.LightManager;
 import com.jedk1.jedcore.util.RegenTempBlock;
 import com.projectkorra.projectkorra.ProjectKorra;
 import com.projectkorra.projectkorra.ability.CoreAbility;
 import com.projectkorra.projectkorra.ability.IceAbility;
 import com.projectkorra.projectkorra.earthbending.lava.LavaFlow;
-import com.projectkorra.projectkorra.event.*;
-
+import com.projectkorra.projectkorra.event.AbilityStartEvent;
+import com.projectkorra.projectkorra.event.BendingReloadEvent;
+import com.projectkorra.projectkorra.event.HorizontalVelocityChangeEvent;
 import com.projectkorra.projectkorra.util.DamageHandler;
 import com.projectkorra.projectkorra.util.TempBlock;
 import com.projectkorra.projectkorra.waterbending.plant.PlantRegrowth;
@@ -28,7 +32,9 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.*;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -39,7 +45,8 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
-import org.bukkit.event.player.*;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerToggleSprintEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class JCListener implements Listener {
@@ -48,29 +55,6 @@ public class JCListener implements Listener {
 
 	public JCListener(JedCore plugin) {
 		this.plugin = plugin;
-	}
-
-	@EventHandler(priority = EventPriority.NORMAL)
-	public void onPlayerJoin(PlayerJoinEvent event) {
-		if (BendingBoard.isDisabled(event.getPlayer())) {
-			return;
-		}
-		BendingBoard bb = BendingBoard.get(event.getPlayer());
-		if (bb != null) {
-			new BukkitRunnable() {
-				public void run() {
-					bb.update();
-				}
-			}.runTaskLater(JedCore.plugin, 50);
-		}
-	}
-
-	@EventHandler(priority = EventPriority.NORMAL)
-	public void onPlayerQuit(PlayerQuitEvent event){
-		BendingBoard bb = BendingBoard.get(event.getPlayer());
-		if (bb != null) {
-			bb.remove();
-		}
 	}
 
 	@EventHandler
@@ -162,25 +146,23 @@ public class JCListener implements Listener {
 			}
 		}
 
-		if (event.getDamager() instanceof Arrow) {
-			Arrow arrow = (Arrow) event.getDamager();
-
-			if (event.getEntity() instanceof LivingEntity) {
-				if (arrow.hasMetadata("daggerthrow") && arrow.getShooter() instanceof Player) {
-					if (event.getEntity().getEntityId() != ((Player) arrow.getShooter()).getEntityId()) {
-						DaggerThrow.damageEntityFromArrow(((LivingEntity) event.getEntity()), arrow);
+		if (event.getDamager() instanceof Arrow arrow) {
+            if (event.getEntity() instanceof LivingEntity) {
+				if (arrow.hasMetadata("daggerthrow")) {
+					event.setDamage(0);
+					if (!(arrow.getShooter() instanceof Player shooter)) return;
+                    if (!CoreAbility.hasAbility(shooter, DaggerThrow.class)) return;
+					DaggerThrow daggerThrow = CoreAbility.getAbility(shooter, DaggerThrow.class);
+					if (daggerThrow != null) {
+						daggerThrow.damageEntityFromArrow(((LivingEntity) event.getEntity()), arrow);
+						arrow.remove();
+						event.setCancelled(true);
 					}
-					event.setDamage(0);
-					event.setCancelled(true);
-					arrow.remove();
-					arrow.removeMetadata("daggerthrow", JedCore.plugin);
 				}
-
 				if (arrow.hasMetadata("metalhook")) {
-					arrow.remove();
 					event.setDamage(0);
+					arrow.remove();
 					event.setCancelled(true);
-					arrow.removeMetadata("metalhook", JedCore.plugin);
 				}
 			}
 		}
@@ -237,62 +219,18 @@ public class JCListener implements Listener {
 			}
 		}.runTaskLater(JedCore.plugin, 1);
 	}
-
-	@EventHandler(priority = EventPriority.NORMAL)
-	public void onPlayerItemHoldEvent(PlayerItemHeldEvent event) {
-		BendingBoard.update(event.getPlayer(), event.getNewSlot());
-	}
-
-	@EventHandler(priority = EventPriority.NORMAL)
-	public void onCooldownChange(PlayerCooldownChangeEvent event) {
-		if (!BendingBoard.enabled) return;
-		if (event.getPlayer() == null) return;
-		// Fix a bug in ProjectKorra 1.8.4 that keeps IceWave around forever.
-		// It will continuously add a cooldown to WaterWave, which makes this spam tasks / scoreboard updates.
-		// It also happens with FastSwim when the player is a waterbender.
-		if (BendingBoard.shouldIgnoreAbility(event.getAbility())) {
-			return;
-		}
-		new BukkitRunnable() {
-			public void run() {
-				Player player = Bukkit.getPlayer(event.getPlayer().getUniqueId());
-				if (player != null) BendingBoard.update(player);
-			}
-		}.runTaskLater(JedCore.plugin, 1);
-	}
-	
-	@EventHandler(priority = EventPriority.NORMAL)
-	public void onWorldChange(PlayerChangedWorldEvent event){
-		new BukkitRunnable() {
-			public void run() {
-				BendingBoard.update(event.getPlayer());
-			}
-		}.runTaskLater(JedCore.plugin, 1);
-	}
-
-	@EventHandler(priority = EventPriority.NORMAL)
-	public void onElementChange(PlayerChangeElementEvent event){
-		if (!BendingBoard.enabled) return;
-		if (event.getTarget() == null) return;
-		new BukkitRunnable() {
-			public void run() {
-				Player player = Bukkit.getPlayer(event.getTarget().getUniqueId());
-				if (player != null) BendingBoard.update(player);
-			}
-		}.runTaskLater(JedCore.plugin, 1);
-	}
 	
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void onChat(AsyncPlayerChatEvent event){
 		Player player = event.getPlayer();
 		String msg = event.getMessage();
 
-		if (msg.toLowerCase().contains("bring fire and light together as one and allow the breath of color")) {
+		if (msg.toLowerCase().contains("bring fire and light together as one and allow the breath of color") || msg.toLowerCase().contains("bring fire and light together as one and allow the breath of colour")) {
 			FireBreath.toggleRainbowBreath(player, true);
 			event.setCancelled(true);
 		}
 
-		if (msg.toLowerCase().contains("split the bond of fire and light and set the color free")) {
+		if (msg.toLowerCase().contains("split the bond of fire and light and set the color free") || msg.toLowerCase().contains("split the bond of fire and light and set the colour free")) {
 			FireBreath.toggleRainbowBreath(player, false);
 			event.setCancelled(true);
 		}

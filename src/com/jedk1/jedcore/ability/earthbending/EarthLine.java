@@ -2,10 +2,11 @@ package com.jedk1.jedcore.ability.earthbending;
 
 import com.jedk1.jedcore.JedCore;
 import com.jedk1.jedcore.configuration.JedCoreConfig;
-import com.jedk1.jedcore.policies.removal.*;
-import com.jedk1.jedcore.util.RegenTempBlock;
-
-import com.projectkorra.projectkorra.util.TempBlock;
+import com.jedk1.jedcore.policies.removal.CannotBendRemovalPolicy;
+import com.jedk1.jedcore.policies.removal.CompositeRemovalPolicy;
+import com.jedk1.jedcore.policies.removal.IsDeadRemovalPolicy;
+import com.jedk1.jedcore.policies.removal.IsOfflineRemovalPolicy;
+import com.jedk1.jedcore.policies.removal.SwappedSlotsRemovalPolicy;
 import com.projectkorra.projectkorra.GeneralMethods;
 import com.projectkorra.projectkorra.ability.AddonAbility;
 import com.projectkorra.projectkorra.ability.EarthAbility;
@@ -13,12 +14,9 @@ import com.projectkorra.projectkorra.attribute.Attribute;
 import com.projectkorra.projectkorra.command.Commands;
 import com.projectkorra.projectkorra.earthbending.passive.DensityShift;
 import com.projectkorra.projectkorra.region.RegionProtection;
-import com.projectkorra.projectkorra.util.BlockSource;
-import com.projectkorra.projectkorra.util.ClickType;
 import com.projectkorra.projectkorra.util.DamageHandler;
-
+import com.projectkorra.projectkorra.util.TempBlock;
 import com.projectkorra.projectkorra.util.TempFallingBlock;
-
 import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -35,27 +33,28 @@ public class EarthLine extends EarthAbility implements AddonAbility {
 	private Location location;
 	private Location endLocation;
 	private Block sourceBlock;
+	private TempBlock sourceTempBlock;
 	private Material sourceType;
 	private boolean progressing;
 	private boolean hitted;
 	private int goOnAfterHit;
 	private long removalTime = -1;
-
+	private boolean allowChangeDirection;
+	private CompositeRemovalPolicy removalPolicy;
 	private long useCooldown;
 	private long prepareCooldown;
+	private double sourceKeepRange;
+
 	@Attribute(Attribute.DURATION)
 	private long maxDuration;
 	@Attribute(Attribute.RANGE)
 	private double range;
 	@Attribute(Attribute.SELECT_RANGE)
 	private double prepareRange;
-	private double sourceKeepRange;
 	@Attribute(Attribute.RADIUS)
 	private int affectingRadius;
 	@Attribute(Attribute.DAMAGE)
 	private double damage;
-	private boolean allowChangeDirection;
-	private CompositeRemovalPolicy removalPolicy;
 
 	public EarthLine(Player player) {
 		super(player);
@@ -68,6 +67,7 @@ public class EarthLine extends EarthAbility implements AddonAbility {
 		goOnAfterHit = 1;
 
 		setFields();
+
 		if (prepare()) {
 			start();
 			if (!isRemoved() && prepareCooldown != 0) {
@@ -100,10 +100,13 @@ public class EarthLine extends EarthAbility implements AddonAbility {
 	}
 
     public boolean prepare() {
-        final Block block = BlockSource.getEarthSourceBlock(this.player, this.range, ClickType.SHIFT_DOWN);
+        final Block block = getEarthSourceBlock(this.range);
+
         if (block == null || !this.isEarthbendable(block)) {
             return false;
         } else if (TempBlock.isTempBlock(block) && !EarthAbility.isBendableEarthTempBlock(block)) {
+            return false;
+        } else if (EarthAbility.getMovedEarth().containsKey(block)) {
             return false;
         }
 
@@ -126,6 +129,7 @@ public class EarthLine extends EarthAbility implements AddonAbility {
 
         this.sourceBlock = block;
         this.focusBlock();
+
         return true;
     }
 
@@ -133,50 +137,49 @@ public class EarthLine extends EarthAbility implements AddonAbility {
 		if (DensityShift.isPassiveSand(this.sourceBlock)) {
 			DensityShift.revertSand(this.sourceBlock);
 		}
+
 		if (this.sourceBlock.getType() == Material.SAND) {
 			this.sourceType = Material.SAND;
-			this.sourceBlock.setType(Material.SANDSTONE);
+			sourceTempBlock = new TempBlock(sourceBlock, Material.SANDSTONE.createBlockData());
 		} else if (this.sourceBlock.getType() == Material.RED_SAND) {
 			this.sourceType = Material.RED_SAND;
-			this.sourceBlock.setType(Material.RED_SANDSTONE);
+			sourceTempBlock = new TempBlock(sourceBlock, Material.RED_SANDSTONE.createBlockData());
 		} else if (this.sourceBlock.getType() == Material.STONE) {
-			this.sourceBlock.setType(Material.COBBLESTONE);
 			this.sourceType = Material.STONE;
+			sourceTempBlock = new TempBlock(sourceBlock, Material.COBBLESTONE.createBlockData());
 		} else {
 			this.sourceType = this.sourceBlock.getType();
-			this.sourceBlock.setType(Material.STONE);
+			sourceTempBlock = new TempBlock(sourceBlock, Material.STONE.createBlockData());
 		}
 
 		this.location = this.sourceBlock.getLocation();
 	}
 	
 	private void unfocusBlock() {
-		sourceBlock.setType(sourceType);
-	}
-
-	private void breakSourceBlock() {
-		sourceBlock.setType(sourceType);
-		new RegenTempBlock(sourceBlock, Material.AIR, Material.AIR.createBlockData(), 5000L);
+		sourceTempBlock.revertBlock();
 	}
 
 	@Override
 	public void remove() {
-		if (sourceBlock != null && sourceBlock.getType() != Material.AIR) {
-			sourceBlock.setType(sourceType); // Ensure no duplication of the source block
-		}
+		sourceTempBlock.revertBlock();
 		super.remove();
 	}
 
+	// todo: static
 	private static Location getTargetLocation(Player player) {
 		ConfigurationSection config = JedCoreConfig.getConfig(player);
+
 		double range = config.getInt("Abilities.Earth.EarthLine.Range");
+
 		Entity target = GeneralMethods.getTargetedEntity(player, range, player.getNearbyEntities(range, range, range));
 		Location location;
+
 		if (target == null) {
 			location = GeneralMethods.getTargetedLocation(player, range);
 		} else {
 			location = ((LivingEntity) target).getEyeLocation();
 		}
+
 		return location;
 	}
 
@@ -185,7 +188,6 @@ public class EarthLine extends EarthAbility implements AddonAbility {
 		if (maxDuration > 0) removalTime = System.currentTimeMillis() + maxDuration;
 		this.endLocation = endLocation;
 		progressing = true;
-		breakSourceBlock();
 		sourceBlock.getWorld().playEffect(sourceBlock.getLocation(), Effect.GHAST_SHOOT, 0, 10);
 	}
 
@@ -244,8 +246,10 @@ public class EarthLine extends EarthAbility implements AddonAbility {
 		double z1 = endLocation.getZ();
 		double x0 = sourceBlock.getX();
 		double z0 = sourceBlock.getZ();
+
 		Vector looking = new Vector(x1 - x0, 0.0D, z1 - z0);
 		Vector push = new Vector(x1 - x0, 0.34999999999999998D, z1 - z0);
+
 		if (location.distance(sourceBlock.getLocation()) < range) {
 			Material cloneType = location.getBlock().getType();
 			Location locationYUP = location.getBlock().getLocation().clone().add(0.5, 0.1, 0.5);
@@ -253,7 +257,7 @@ public class EarthLine extends EarthAbility implements AddonAbility {
 			playEarthbendingSound(location);
 
 			if (isEarthbendable(location.getBlock())) {
-				new RegenTempBlock(location.getBlock(), Material.AIR, Material.AIR.createBlockData(), 700L);
+				new TempBlock(location.getBlock(), Material.AIR.createBlockData(), 700L);
 				new TempFallingBlock(locationYUP, cloneType.createBlockData(), new Vector(0.0, 0.35, 0.0), this);
 			}
 
@@ -273,9 +277,10 @@ public class EarthLine extends EarthAbility implements AddonAbility {
 				}
 			} else {
 				for (Entity entity : GeneralMethods.getEntitiesAroundPoint(location, affectingRadius)) {
-					if (RegionProtection.isRegionProtected(this, entity.getLocation()) || ((entity instanceof Player) && Commands.invincible.contains(entity.getName()))){
+					if (RegionProtection.isRegionProtected(this, entity.getLocation()) || ((entity instanceof Player) && Commands.invincible.contains(entity.getName()))) {
 						return;
 					}
+
 					if ((entity instanceof LivingEntity) && entity.getEntityId() != player.getEntityId()) {
 						GeneralMethods.setVelocity(this, entity, push.normalize().multiply(2));
 						DamageHandler.damageEntity(entity, damage, this);

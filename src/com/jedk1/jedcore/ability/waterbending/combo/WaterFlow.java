@@ -6,7 +6,10 @@ import com.jedk1.jedcore.configuration.JedCoreConfig;
 import com.jedk1.jedcore.util.MaterialUtil;
 import com.jedk1.jedcore.util.RegenTempBlock;
 import com.projectkorra.projectkorra.GeneralMethods;
-import com.projectkorra.projectkorra.ability.*;
+import com.projectkorra.projectkorra.ability.AddonAbility;
+import com.projectkorra.projectkorra.ability.AirAbility;
+import com.projectkorra.projectkorra.ability.ComboAbility;
+import com.projectkorra.projectkorra.ability.WaterAbility;
 import com.projectkorra.projectkorra.ability.util.ComboManager.AbilityInformation;
 import com.projectkorra.projectkorra.ability.util.ComboUtil;
 import com.projectkorra.projectkorra.airbending.AirSpout;
@@ -19,7 +22,6 @@ import com.projectkorra.projectkorra.util.ClickType;
 import com.projectkorra.projectkorra.util.TempBlock;
 import com.projectkorra.projectkorra.waterbending.WaterManipulation;
 import com.projectkorra.projectkorra.waterbending.WaterSpout;
-
 import com.projectkorra.projectkorra.waterbending.plant.PlantRegrowth;
 import com.projectkorra.projectkorra.waterbending.util.WaterReturn;
 import org.bukkit.Location;
@@ -65,6 +67,8 @@ public class WaterFlow extends WaterAbility implements AddonAbility, ComboAbilit
 	private boolean canUseBottle;
 	private boolean canUsePlants;
 	private boolean removeOnAnyDamage;
+	private boolean requireAdjacentSources;
+	private boolean requireAdjacentPlants;
 	
 	private long time;
 	private Location origin;
@@ -159,6 +163,8 @@ public class WaterFlow extends WaterAbility implements AddonAbility, ComboAbilit
 		avatarSize = config.getInt("Abilities.Water.WaterCombo.WaterFlow.Size.AvatarState");
 		fullMoonSizeSmall = config.getInt("Abilities.Water.WaterCombo.WaterFlow.Size.FullmoonSmall");
 		fullMoonSizeLarge = config.getInt("Abilities.Water.WaterCombo.WaterFlow.Size.FullmoonLarge");
+		requireAdjacentSources = config.getBoolean("Abilities.Water.WaterCombo.WaterFlow.RequireAdjacentSources");
+		requireAdjacentPlants = config.getBoolean("Abilities.Water.WaterCombo.WaterGimbal.RequireAdjacentPlants");
 		
 		applyModifiers();
 	}
@@ -191,11 +197,11 @@ public class WaterFlow extends WaterAbility implements AddonAbility, ComboAbilit
 	private boolean prepare() {
 		sourceBlock = BlockSource.getWaterSourceBlock(player, sourceRange, ClickType.SHIFT_DOWN, true, bPlayer.canIcebend(), canUsePlants);
 		if (sourceBlock != null) {
-			boolean isGoodSource = GeneralMethods.isAdjacentToThreeOrMoreSources(sourceBlock, false) || (TempBlock.isTempBlock(sourceBlock) && WaterAbility.isBendableWaterTempBlock(sourceBlock));
+			boolean isGoodSource = !requireAdjacentSources || GeneralMethods.isAdjacentToThreeOrMoreSources(sourceBlock, false) || (TempBlock.isTempBlock(sourceBlock) && WaterAbility.isBendableWaterTempBlock(sourceBlock));
 
 			// canUsePlants needs to be checked here due to a bug with PK dynamic source caching.
 			// getWaterSourceBlock can return a plant even if canUsePlants is passed as false.
-			if (isGoodSource || (canUsePlants && isPlant(sourceBlock))) {
+			if (isGoodSource || (canUsePlants && isPlant(sourceBlock) && (!requireAdjacentPlants || JCMethods.isAdjacentToThreeOrMoreSources(sourceBlock, sourceBlock.getType())))) {
 				head = sourceBlock.getLocation().clone();
 				origin = sourceBlock.getLocation().clone();
 				if (isPlant(sourceBlock)) {

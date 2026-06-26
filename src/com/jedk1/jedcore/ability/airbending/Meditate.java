@@ -7,7 +7,6 @@ import com.projectkorra.projectkorra.Element;
 import com.projectkorra.projectkorra.ability.AddonAbility;
 import com.projectkorra.projectkorra.ability.AirAbility;
 import com.projectkorra.projectkorra.attribute.Attribute;
-
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.configuration.ConfigurationSection;
@@ -18,18 +17,18 @@ import org.bukkit.potion.PotionEffectType;
 public class Meditate extends AirAbility implements AddonAbility {
 
 	private double startHealth;
-
 	private String unfocusMsg;
 	private long warmup;
-	@Attribute(Attribute.COOLDOWN)
-	private long cooldown;
-	@Attribute(Attribute.DURATION)
-	private int boostDuration;
 	private int particleDensity;
 	private boolean lossFocusMessage;
 	private int absorptionBoost;
 	private int speedBoost;
 	private int jumpBoost;
+
+	@Attribute(Attribute.COOLDOWN)
+	private long cooldown;
+	@Attribute(Attribute.DURATION)
+	private int boostDuration;
 
 	public Meditate(Player player) {
 		super(player);
@@ -63,10 +62,12 @@ public class Meditate extends AirAbility implements AddonAbility {
 			remove();
 			return;
 		}
+
 		if (!bPlayer.canBendIgnoreCooldowns(this)) {
 			remove();
 			return;
 		}
+
 		if (player.getHealth() < startHealth) {
 			if (lossFocusMessage) {
 				player.sendMessage(Element.AIR.getColor() + unfocusMsg);
@@ -74,9 +75,12 @@ public class Meditate extends AirAbility implements AddonAbility {
 			remove();
 			return;
 		}
+
 		if (System.currentTimeMillis() > getStartTime() + warmup) {
 			player.spawnParticle(Particle.ELECTRIC_SPARK, player.getLocation(), 3, 0.5, 0.5, 0.5, 0.003F);
+
 			JCMethods.displayColoredParticles("#FFFFFF", player.getLocation(), particleDensity, Math.random(), Math.random(), Math.random(), 0f);
+
 			if (!player.isSneaking()) {
 				bPlayer.addCooldown(this);
 				givePlayerBuffs();
@@ -93,6 +97,7 @@ public class Meditate extends AirAbility implements AddonAbility {
 		if (player.hasPotionEffect(PotionEffectType.SPEED)) {
 			player.removePotionEffect(PotionEffectType.SPEED);
 		}
+
 		player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, boostDuration/50, speedBoost - 1));
 
 		JedCore.plugin.getPotionEffectAdapter().applyJumpBoost(player, boostDuration, jumpBoost);
@@ -100,6 +105,7 @@ public class Meditate extends AirAbility implements AddonAbility {
 		if (player.hasPotionEffect(PotionEffectType.ABSORPTION)) {
 			player.removePotionEffect(PotionEffectType.ABSORPTION);
 		}
+
 		player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, boostDuration/50, absorptionBoost - 1));
 	}
 	

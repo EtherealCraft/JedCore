@@ -11,6 +11,7 @@ import com.projectkorra.projectkorra.region.RegionProtection;
 import com.projectkorra.projectkorra.waterbending.ice.PhaseChange;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Entity;
@@ -23,7 +24,7 @@ import com.projectkorra.projectkorra.GeneralMethods;
 import com.projectkorra.projectkorra.ability.AddonAbility;
 import com.projectkorra.projectkorra.ability.IceAbility;
 import com.projectkorra.projectkorra.util.DamageHandler;
-import com.projectkorra.projectkorra.util.ParticleEffect;
+
 import com.projectkorra.projectkorra.util.TempBlock;
 
 public class FrostBreath extends IceAbility implements AddonAbility {
@@ -277,7 +278,7 @@ public class FrostBreath extends IceAbility implements AddonAbility {
 					freezeGround(loc);
 				}
 
-				ParticleEffect.SNOW_SHOVEL.display(loc, config.particles, Math.random(), Math.random(), Math.random(), size);
+				loc.getWorld().spawnParticle(Particle.ITEM_SNOWBALL, loc, config.particles, Math.random(), Math.random(), Math.random(), size);
 
 				JCMethods.displayColoredParticles("#DCDCDC", loc, 1, Math.random(), Math.random(), Math.random(), 0.003f);
 				JCMethods.displayColoredParticles("#9696FF", loc, 1, Math.random(), Math.random(), Math.random(), 0.0035f);
@@ -315,6 +316,9 @@ public class FrostBreath extends IceAbility implements AddonAbility {
 		}
 
 		private void updateFrozenBlock(Block block, Material type, long duration) {
+			if (config.snowUnderEntities && duration <= 0) {
+				return;
+			}
 			// Store the TempBlock as a FrozenBlock block so it can be reverted later.
 			for (FrozenBlock fb : frozenBlocks) {
 				if (fb.tempBlock.getBlock().equals(block)) {
@@ -416,6 +420,7 @@ public class FrostBreath extends IceAbility implements AddonAbility {
 		boolean slowEnabled;
 		long slowDuration;
 		boolean restrictBiomes;
+		boolean snowUnderEntities;
 
 		Config(Player player) {
 			ConfigurationSection config = JedCoreConfig.getConfig(player);
@@ -425,6 +430,7 @@ public class FrostBreath extends IceAbility implements AddonAbility {
 			particles = config.getInt("Abilities.Water.FrostBreath.Particles");
 			freezeDuration = config.getInt("Abilities.Water.FrostBreath.FrostDuration");
 			snowDuration = config.getInt("Abilities.Water.FrostBreath.SnowDuration");
+			snowUnderEntities = config.getBoolean("Abilities.Water.FrostBreath.SnowUnderEntities");
 			frozenWaterDuration = config.getInt("Abilities.Water.FrostBreath.FrozenWaterDuration");
 			range = config.getInt("Abilities.Water.FrostBreath.Range");
 			snowEnabled = config.getBoolean("Abilities.Water.FrostBreath.Snow");

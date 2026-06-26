@@ -1,20 +1,32 @@
 package com.jedk1.jedcore.ability.earthbending;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
+import com.jedk1.jedcore.JCMethods;
+import com.jedk1.jedcore.JedCore;
 import com.jedk1.jedcore.configuration.JedCoreConfig;
-import com.jedk1.jedcore.policies.removal.*;
+import com.jedk1.jedcore.policies.removal.CannotBendRemovalPolicy;
+import com.jedk1.jedcore.policies.removal.CompositeRemovalPolicy;
+import com.jedk1.jedcore.policies.removal.IsDeadRemovalPolicy;
+import com.jedk1.jedcore.policies.removal.IsOfflineRemovalPolicy;
+import com.jedk1.jedcore.policies.removal.SwappedSlotsRemovalPolicy;
+import com.jedk1.jedcore.util.RegenTempBlock;
+import com.projectkorra.projectkorra.GeneralMethods;
+import com.projectkorra.projectkorra.ability.AddonAbility;
 import com.projectkorra.projectkorra.ability.CoreAbility;
 import com.projectkorra.projectkorra.ability.ElementalAbility;
+import com.projectkorra.projectkorra.ability.LavaAbility;
+import com.projectkorra.projectkorra.ability.EarthAbility;
 import com.projectkorra.projectkorra.attribute.Attribute;
 import com.projectkorra.projectkorra.earthbending.passive.DensityShift;
+import com.projectkorra.projectkorra.firebending.util.FireDamageTimer;
 import com.projectkorra.projectkorra.region.RegionProtection;
+import com.projectkorra.projectkorra.util.DamageHandler;
+
+import com.projectkorra.projectkorra.util.TempBlock;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.configuration.ConfigurationSection;
@@ -23,16 +35,9 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
-import com.jedk1.jedcore.JCMethods;
-import com.jedk1.jedcore.JedCore;
-import com.jedk1.jedcore.util.RegenTempBlock;
-import com.projectkorra.projectkorra.GeneralMethods;
-import com.projectkorra.projectkorra.ability.AddonAbility;
-import com.projectkorra.projectkorra.ability.LavaAbility;
-import com.projectkorra.projectkorra.firebending.util.FireDamageTimer;
-import com.projectkorra.projectkorra.util.DamageHandler;
-import com.projectkorra.projectkorra.util.ParticleEffect;
-import com.projectkorra.projectkorra.util.TempBlock;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class LavaDisc extends LavaAbility implements AddonAbility {
 
@@ -82,7 +87,7 @@ public class LavaDisc extends LavaAbility implements AddonAbility {
 
 	public void setFields() {
 		ConfigurationSection config = JedCoreConfig.getConfig(this.player);
-		
+
 		damage = config.getDouble("Abilities.Earth.LavaDisc.Damage");
 		cooldown = config.getLong("Abilities.Earth.LavaDisc.Cooldown");
 		duration = config.getLong("Abilities.Earth.LavaDisc.Duration");
@@ -106,16 +111,16 @@ public class LavaDisc extends LavaAbility implements AddonAbility {
 		boolean lavaOnly = config.getBoolean("Abilities.Earth.LavaDisc.Source.LavaOnly");
 		double sourceRange = config.getDouble("Abilities.Earth.LavaDisc.Source.Range");
 
-		if (getLavaSourceBlock(player, sourceRange) != null) {
-			Block block = getLavaSourceBlock(player, sourceRange);
-			new RegenTempBlock(block, Material.LAVA, Material.LAVA.createBlockData(bd -> ((Levelled)bd).setLevel(4)), sourceRegen);
+		Block lavaSource = getLavaSourceBlock(player, sourceRange);
+		if (lavaSource != null && !EarthAbility.getMovedEarth().containsKey(lavaSource)) {
+			new RegenTempBlock(lavaSource, Material.LAVA, Material.LAVA.createBlockData(bd -> ((Levelled)bd).setLevel(4)), sourceRegen);
 			return true;
-		} else if (getEarthSourceBlock(sourceRange) != null) {
-			if (lavaOnly)
-				return false;
-			Block block = getEarthSourceBlock(sourceRange);
-			new RegenTempBlock(block, Material.LAVA, Material.LAVA.createBlockData(bd -> ((Levelled)bd).setLevel(4)), sourceRegen);
+		} else {
+			Block earthSource = getEarthSourceBlock(sourceRange);
+			if (earthSource != null && !lavaOnly && !EarthAbility.getMovedEarth().containsKey(earthSource)) {
+				new RegenTempBlock(earthSource, Material.LAVA, Material.LAVA.createBlockData(bd -> ((Levelled)bd).setLevel(4)), sourceRegen);
 			return true;
+			}
 		}
 
 		return false;
@@ -183,9 +188,9 @@ public class LavaDisc extends LavaAbility implements AddonAbility {
 		DamageHandler.damageEntity(entity, damage, this);
 		entity.setFireTicks(20);
 		new FireDamageTimer(entity, player, this);
-		ParticleEffect.LAVA.display(entity.getLocation(), 15, Math.random(), Math.random(), Math.random(), 0.1);
-	}
-	
+		entity.getLocation().getWorld().spawnParticle(Particle.LAVA, entity.getLocation(), 15, Math.random(), Math.random(), Math.random(), 0.1);
+    }
+
 	@Override
 	public long getCooldown() {
 		return cooldown;
@@ -508,44 +513,43 @@ public class LavaDisc extends LavaAbility implements AddonAbility {
 
 		void render(Location location, boolean largeLava) {
 			if (largeLava)
-				ParticleEffect.LAVA.display(location, particles * 2, Math.random(), Math.random(), Math.random(), 0.1);
+				location.getWorld().spawnParticle(Particle.LAVA, location, particles * 2, Math.random(), Math.random(), Math.random(), 0.1);
 			else
-				ParticleEffect.LAVA.display(location, 1, Math.random(), Math.random(), Math.random(), 0.1);
-
+				location.getWorld().spawnParticle(Particle.LAVA, location, 1, Math.random(), Math.random(), Math.random(), 0.1);
 			angle += 1;
-			if (angle > 360)
-				angle = 0;
-
+			if (angle > 360) angle = 0;
 			for (Location l : JCMethods.getCirclePoints(location, 20, 1, angle)) {
-				ParticleEffect.REDSTONE.display(l, 0, 196, 93, 0, 0.005F, new Particle.DustOptions(Color.fromRGB(196, 93, 0), 1));
+				location.getWorld().spawnParticle(Particle.DUST, l, 0, 196 / 255.0, 93 / 255.0, 0, 0.005F, new Particle.DustOptions(Color.fromRGB(196, 93, 0), 1));
 				if (largeLava && damageBlocks)
 					damageBlocks(l);
 			}
-
 			for (Location l : JCMethods.getCirclePoints(location, 10, 0.5, angle)) {
-				ParticleEffect.FLAME.display(l, 1, 0, 0, 0, 0.01);
-				ParticleEffect.SMOKE_NORMAL.display(l, 1, 0, 0, 0, 0.05);
+				location.getWorld().spawnParticle(Particle.FLAME, l, 1, 0, 0, 0, 0.01);
+				location.getWorld().spawnParticle(Particle.SMOKE, l, 1, 0, 0, 0, 0.05);
 				if (largeLava && damageBlocks)
 					damageBlocks(l);
 			}
 		}
 
 		private void damageBlocks(Location l) {
+			Block block = l.getBlock();
+			if (EarthAbility.getMovedEarth().containsKey(block)) {
+				location.getWorld().spawnParticle(Particle.LAVA, l, 20, 0.5, 0.5, 0.5, 0.2);
+				location.getWorld().spawnParticle(Particle.BLOCK, l, 15, 0.3, 0.3, 0.3, 0.15, Material.LAVA.createBlockData());
+				return;
+			}
 			if (!RegionProtection.isRegionProtected(player, l, LavaDisc.this)) {
-				if (!TempBlock.isTempBlock(l.getBlock()) && (isEarthbendable(player, l.getBlock()) || isMetal(l.getBlock()) || meltable.contains(l.getBlock().getType().name()))) {
-					if (DensityShift.isPassiveSand(l.getBlock())) {
-						DensityShift.revertSand(l.getBlock());
+				if (!TempBlock.isTempBlock(block) && (isEarthbendable(player, block) || isMetal(block) || meltable.contains(block.getType().name()))) {
+					if (DensityShift.isPassiveSand(block)) {
+						DensityShift.revertSand(block);
 					}
-
 					if (lavaTrail) {
-						new RegenTempBlock(l.getBlock(), Material.LAVA, Material.LAVA.createBlockData(bd -> ((Levelled) bd).setLevel(4)), regenTime);
-
-						trailBlocks.add(l.getBlock());
+						new RegenTempBlock(block, Material.LAVA, Material.LAVA.createBlockData(bd -> ((Levelled) bd).setLevel(4)), regenTime);
+						trailBlocks.add(block);
 					} else {
-						new RegenTempBlock(l.getBlock(), Material.AIR, Material.AIR.createBlockData(), regenTime);
+						new RegenTempBlock(block, Material.AIR, Material.AIR.createBlockData(), regenTime);
 					}
-
-					ParticleEffect.LAVA.display(l, particles * 2, Math.random(), Math.random(), Math.random(), 0.2);
+					location.getWorld().spawnParticle(Particle.LAVA, l, particles * 2, Math.random(), Math.random(), Math.random(), 0.2);
 				}
 			}
 		}
