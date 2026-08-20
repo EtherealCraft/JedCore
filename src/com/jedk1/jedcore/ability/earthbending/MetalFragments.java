@@ -277,7 +277,7 @@ public class MetalFragments extends MetalAbility implements AddonAbility {
 						3,
 						0.3, 0.3, 0.3,
 						0.2,
-						f
+						f.getItemStack()
 				);
 				f.remove();
 				iterator.remove();
@@ -317,7 +317,7 @@ public class MetalFragments extends MetalAbility implements AddonAbility {
 					3,
 					0.3, 0.3, 0.3,
 					0.2,
-					i
+					i.getItemStack()
 			);
 			i.remove();
 		}

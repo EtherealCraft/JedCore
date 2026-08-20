@@ -82,6 +82,7 @@ public class IceWall extends IceAbility implements AddonAbility {
 	private final List<TempBlock> tempBlocks = new ArrayList<>();
 
 	Random rand = new Random();
+	Ability lastAbilityThatDamagedWall = null;
 
 	public IceWall(Player player) {
 		super(player);
@@ -242,12 +243,13 @@ public class IceWall extends IceAbility implements AddonAbility {
 		}
 	}
 
-	public void damageWall(Player player, int damage) {
+	public void damageWall(Player player, int damage, Ability ability) {
 		long noDamageTicks = 1000;
 		if (System.currentTimeMillis() < lastDamageTime + noDamageTicks)
 			return;
 
 		lastDamageTime = System.currentTimeMillis();
+		lastAbilityThatDamagedWall = ability;
 		tankedDamage += damage;
 
 		if (tankedDamage >= wallHealth) {
@@ -265,6 +267,7 @@ public class IceWall extends IceAbility implements AddonAbility {
 
 			for (Entity e : GeneralMethods.getEntitiesAroundPoint(tb.getLocation(), damageRadius)) {
 				if (e.getEntityId() != player.getEntityId() && e instanceof LivingEntity) {
+					if (lastAbilityThatDamagedWall == null) lastAbilityThatDamagedWall = this;
 					DamageHandler.damageEntity(e, damage * getNightFactor(player.getWorld()), this);
 					if (forceful) {
 						((LivingEntity) e).setNoDamageTicks(0);
@@ -287,7 +290,7 @@ public class IceWall extends IceAbility implements AddonAbility {
 			for (Block b : iw.affectedBlocks) {
 				if (entity.getLocation().getWorld() == b.getLocation().getWorld() && entity.getLocation().distance(b.getLocation()) < 2) {
 					double damage = ((travelledDistance - 5.0) < 0 ? 0 : travelledDistance - 5.0) / (difference.length());
-					iw.damageWall(instigator, (int) damage);
+					iw.damageWall(instigator, (int) damage, null);
 				}
 			}
 		}
@@ -330,9 +333,9 @@ public class IceWall extends IceAbility implements AddonAbility {
                     for (Block ice : iw.affectedBlocks) {
                         if (ice.getLocation().getWorld() == tb.getLocation().getWorld() && ice.getLocation().distance(tb.getLocation()) <= 2) {
                             if (t.isFreeze())
-                                iw.damageWall(t.getPlayer(), (int) (iw.torrentFreezeDamage * getNightFactor(ice.getWorld())));
+                                iw.damageWall(t.getPlayer(), (int) (iw.torrentFreezeDamage * getNightFactor(ice.getWorld())), t);
                             else
-                                iw.damageWall(t.getPlayer(), (int) (iw.torrentDamage * getNightFactor(ice.getWorld())));
+                                iw.damageWall(t.getPlayer(), (int) (iw.torrentDamage * getNightFactor(ice.getWorld())), t);
 
                             if (!iw.isWallDoneFor)
                                 t.setFreeze(false);
@@ -348,7 +351,7 @@ public class IceWall extends IceAbility implements AddonAbility {
                         break;
 
                     if (ice.getLocation().getWorld() == ib.source.getLocation().getWorld() && ice.getLocation().distance(ib.source.getLocation()) <= 2) {
-                        iw.damageWall(ib.getPlayer(), (int) (iw.iceBlastDamage * getNightFactor(ice.getWorld())));
+                        iw.damageWall(ib.getPlayer(), (int) (iw.iceBlastDamage * getNightFactor(ice.getWorld())), ib);
 
                         if (!iw.isWallDoneFor)
                             ib.remove();
@@ -360,7 +363,7 @@ public class IceWall extends IceAbility implements AddonAbility {
                 if (fb.getLocation() == null) continue;
                 for (Block ice : iw.affectedBlocks) {
                     if (ice.getLocation().getWorld() == fb.getLocation().getWorld() && fb.getLocation().distance(ice.getLocation()) <= 1.5) {
-                        iw.damageWall(fb.getPlayer(), iw.fireBlastChargedDamage);
+                        iw.damageWall(fb.getPlayer(), iw.fireBlastChargedDamage, fb);
 
                         if (!iw.isWallDoneFor)
                             fb.remove();
@@ -372,7 +375,7 @@ public class IceWall extends IceAbility implements AddonAbility {
                 if (fb.getLocation() == null) continue;
                 for (Block ice : iw.affectedBlocks) {
                     if (ice.getLocation().getWorld() == fb.getLocation().getWorld() && fb.getLocation().distance(ice.getLocation()) <= 1.5) {
-                        iw.damageWall(fb.getPlayer(), iw.fireBlastDamage);
+                        iw.damageWall(fb.getPlayer(), iw.fireBlastDamage, fb);
 
                         if (!iw.isWallDoneFor)
                             fb.remove();
@@ -387,7 +390,7 @@ public class IceWall extends IceAbility implements AddonAbility {
                         for (int j = 0; j < es.getBlocks().size(); j++) {
                             Block b = es.getBlocks().get(j);
                             if (ice.getLocation().getWorld() == b.getLocation().getWorld() && b.getLocation().distance(ice.getLocation()) <= 2) {
-                                iw.damageWall(es.getPlayer(), iw.earthSmashDamage);
+                                iw.damageWall(es.getPlayer(), iw.earthSmashDamage, es);
 
                                 if (!iw.isWallDoneFor) {
                                     for (Block block : es.getBlocksIncludingInner()) {
@@ -415,7 +418,7 @@ public class IceWall extends IceAbility implements AddonAbility {
                     for (Block ice : iw.affectedBlocks) {
                         for (Location loc : arc.getPoints()) {
                             if (ice.getLocation().getWorld() == loc.getWorld() && loc.distance(ice.getLocation()) <= 1.5) {
-                                iw.damageWall(l.getPlayer(), (int) (FireAbility.getDayFactor(iw.lightningDamage, ice.getWorld())));
+                                iw.damageWall(l.getPlayer(), (int) (FireAbility.getDayFactor(iw.lightningDamage, ice.getWorld())), l);
 
                                 if (!iw.isWallDoneFor)
                                     l.remove();
@@ -429,7 +432,7 @@ public class IceWall extends IceAbility implements AddonAbility {
                 if (ca.getLocation() == null) continue;
                 for (Block ice : iw.affectedBlocks) {
                     if (ice.getLocation().getWorld() == ca.getLocation().getWorld() && ca.getLocation().distance(ice.getLocation()) <= 1.5) {
-                        iw.damageWall(ca.getPlayer(), iw.combustionDamage);
+                        iw.damageWall(ca.getPlayer(), iw.combustionDamage, ca);
                         if (!iw.isWallDoneFor) ca.remove();
                     }
                 }

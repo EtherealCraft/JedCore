@@ -120,7 +120,7 @@ public class LavaThrow extends LavaAbility implements AddonAbility {
 	private boolean prepare() {
 		Block targetBlock = getTargetLavaBlock(sourceRange);
 
-		if (targetBlock != null && !TempBlock.isTempBlock(targetBlock) && !EarthAbility.getMovedEarth().containsKey(targetBlock)) {
+		if (targetBlock != null && !EarthAbility.getMovedEarth().containsKey(targetBlock)) {
 			selectedSource = targetBlock;
 			return true;
 		}
