@@ -5,7 +5,6 @@ import com.jedk1.jedcore.configuration.JedCoreConfig;
 import com.projectkorra.projectkorra.BendingPlayer;
 import com.projectkorra.projectkorra.Element;
 import com.projectkorra.projectkorra.ability.IceAbility;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Particle;
 import org.bukkit.World;
@@ -50,7 +49,7 @@ public class IcePassive {
 
 			if (!player.hasPermission("bending.ability.IceSkate")) continue;
 
-			player.getWorld().spawnParticle(Particle.ITEM_SNOWBALL, player.getLocation().clone().add(0, 0.2, 0), 15, Math.random() / 2, Math.random() / 2, Math.random() / 2, 0);
+			player.getWorld().spawnParticle(Particle.POOF, player.getLocation().clone().add(0, 0.2, 0), 15, Math.random() / 2, Math.random() / 2, Math.random() / 2, 0);
 			player.removePotionEffect(PotionEffectType.SPEED);
 			player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, config.duration, config.speedFactor));
 		}

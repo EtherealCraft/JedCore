@@ -3,12 +3,7 @@ package com.jedk1.jedcore.ability.earthbending;
 import com.jedk1.jedcore.JedCore;
 import com.jedk1.jedcore.collision.CollisionUtil;
 import com.jedk1.jedcore.configuration.JedCoreConfig;
-import com.jedk1.jedcore.policies.removal.CannotBendRemovalPolicy;
-import com.jedk1.jedcore.policies.removal.CompositeRemovalPolicy;
-import com.jedk1.jedcore.policies.removal.IsDeadRemovalPolicy;
-import com.jedk1.jedcore.policies.removal.IsOfflineRemovalPolicy;
-import com.jedk1.jedcore.policies.removal.OutOfRangeRemovalPolicy;
-import com.jedk1.jedcore.policies.removal.SwappedSlotsRemovalPolicy;
+import com.jedk1.jedcore.policies.removal.*;
 import com.projectkorra.projectkorra.BendingPlayer;
 import com.projectkorra.projectkorra.Element;
 import com.projectkorra.projectkorra.GeneralMethods;
@@ -36,14 +31,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class MudSurge extends EarthAbility implements AddonAbility {
@@ -67,7 +55,7 @@ public class MudSurge extends EarthAbility implements AddonAbility {
 	private static Material mudType;
 
 	static {
-		mudType = Material.valueOf("BROWN_TERRACOTTA");
+		mudType = Material.MUD;
 		mudTypes.addAll(Arrays.asList(Material.SAND, Material.RED_SAND, Material.CLAY, Material.TERRACOTTA, Material.BLACK_TERRACOTTA, Material.BLUE_TERRACOTTA,
 				Material.BROWN_TERRACOTTA, Material.CYAN_TERRACOTTA, Material.GRAY_TERRACOTTA, Material.GREEN_TERRACOTTA,
 				Material.LIGHT_BLUE_TERRACOTTA, Material.LIGHT_GRAY_TERRACOTTA, Material.LIME_TERRACOTTA,
@@ -76,16 +64,7 @@ public class MudSurge extends EarthAbility implements AddonAbility {
 				Material.GRASS_BLOCK, Material.DIRT, Material.MYCELIUM, Material.COARSE_DIRT,
 				Material.SOUL_SAND, Material.SOUL_SOIL, Material.RED_SANDSTONE, Material.SANDSTONE, Material.CHISELED_SANDSTONE,
 				Material.CHISELED_RED_SANDSTONE, Material.SMOOTH_SANDSTONE, Material.SMOOTH_RED_SANDSTONE, Material.CUT_SANDSTONE,
-				Material.CUT_RED_SANDSTONE));
-		if (GeneralMethods.getMCVersion() >= 1170) {
-			mudTypes.add(Material.getMaterial("ROOTED_DIRT"));
-		}
-		if (GeneralMethods.getMCVersion() >= 1190) {
-			mudTypes.add(Material.getMaterial("MUD"));
-			mudTypes.add(Material.getMaterial("MUDDY_MANGROVE_ROOTS"));
-			mudTypes.add(Material.getMaterial("PACKED_MUD"));
-		    mudType = Material.valueOf("MUD");
-		}
+				Material.CUT_RED_SANDSTONE, Material.ROOTED_DIRT, Material.MUD, Material.MUDDY_MANGROVE_ROOTS, Material.PACKED_MUD));
 	}
 
 	private CompositeRemovalPolicy removalPolicy;

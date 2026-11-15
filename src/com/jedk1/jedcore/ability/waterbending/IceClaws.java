@@ -1,14 +1,12 @@
 package com.jedk1.jedcore.ability.waterbending;
 
 import com.jedk1.jedcore.JedCore;
-import com.jedk1.jedcore.ability.firebending.FirePunch;
 import com.jedk1.jedcore.configuration.JedCoreConfig;
 import com.projectkorra.projectkorra.GeneralMethods;
 import com.projectkorra.projectkorra.ability.AddonAbility;
 import com.projectkorra.projectkorra.ability.IceAbility;
 import com.projectkorra.projectkorra.attribute.Attribute;
 import com.projectkorra.projectkorra.util.DamageHandler;
-
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.configuration.ConfigurationSection;
@@ -145,7 +143,7 @@ public class IceClaws extends IceAbility implements AddonAbility {
 			if (!isTransparent(head.getBlock())) return false;
 			GeneralMethods.displayColoredParticle("66FFFF", head);
 			GeneralMethods.displayColoredParticle("CCFFFF", head);
-			head.getWorld().spawnParticle(Particle.ITEM_SNOWBALL, head, 1, 0, 0, 0, 0);
+			head.getWorld().spawnParticle(Particle.POOF, head, 1, 0, 0, 0, 0);
 			for (Entity entity : GeneralMethods.getEntitiesAroundPoint(head, 1.5)) {
 				if (entity instanceof LivingEntity && entity.getEntityId() != player.getEntityId() && !(entity instanceof ArmorStand)) {
 					freezeEntity((LivingEntity) entity, false);
@@ -199,7 +197,7 @@ public class IceClaws extends IceAbility implements AddonAbility {
 		}
 		int duration = isPunch ? punchSlowDur : throwSlowDur;
 		int level = isPunch ? punchSlownessLevel : throwSlownessLevel;
-		entity.addPotionEffect(JedCore.plugin.getPotionEffectAdapter().getSlownessEffect(duration, level));
+		entity.addPotionEffect(com.jedk1.jedcore.JCMethods.getSlownessEffect(duration, level));
 		if (!applyCooldownOnThrow || isPunch) {
 			bPlayer.addCooldown(this, isPunch ? punchCooldown : throwCooldown);
 		}

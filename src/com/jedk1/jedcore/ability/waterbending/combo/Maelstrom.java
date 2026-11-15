@@ -12,7 +12,6 @@ import com.projectkorra.projectkorra.ability.util.ComboUtil;
 import com.projectkorra.projectkorra.attribute.Attribute;
 import com.projectkorra.projectkorra.util.BlockSource;
 import com.projectkorra.projectkorra.util.ClickType;
-
 import com.projectkorra.projectkorra.waterbending.Torrent;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -187,7 +186,7 @@ public class Maelstrom extends WaterAbility implements AddonAbility, ComboAbilit
 				for (int j = 0; j < 2; j++) {
 					wave.add(b.getRelative(BlockFace.DOWN, j));
 					new RegenTempBlock(b.getRelative(BlockFace.DOWN, j), Material.WATER, Material.WATER.createBlockData(bd -> ((Levelled) bd).setLevel(1)), 0);
-					loc.getWorld().spawnParticle(Particle.SPLASH, loc, 3, Math.random(), Math.random(), Math.random(), 0);
+					loc.getWorld().spawnParticle(Particle.FISHING, loc, 3, Math.random(), Math.random(), Math.random(), 0);
 				}
 			}
 			newAngle += 15;

@@ -1,6 +1,5 @@
 package com.jedk1.jedcore.ability.avatar.elementsphere;
 
-import com.jedk1.jedcore.JCMethods;
 import com.jedk1.jedcore.JedCore;
 import com.jedk1.jedcore.configuration.JedCoreConfig;
 import com.projectkorra.projectkorra.Element;
@@ -15,6 +14,7 @@ import com.projectkorra.projectkorra.command.Commands;
 import com.projectkorra.projectkorra.firebending.BlazeArc;
 import com.projectkorra.projectkorra.region.RegionProtection;
 import com.projectkorra.projectkorra.util.DamageHandler;
+import com.projectkorra.projectkorra.util.LightManager;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -155,7 +155,7 @@ public class ESFire extends AvatarAbility implements AddonAbility {
 
 	private void playAttackSoundsAndLight() {
 		FireAbility.playFirebendingSound(location);
-		JCMethods.emitLight(location);
+		LightManager.createLight(location).emit();
 	}
 
 	private void handleEntityCollisions() {

@@ -10,12 +10,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.FallingBlock;
-import org.bukkit.entity.Item;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
@@ -188,7 +183,7 @@ public class MagnetShield extends MetalAbility implements AddonAbility {
 				double x = currentRadius * Math.cos(angle);
 				double z = currentRadius * Math.sin(angle);
 				Location particleLocation = playerLocation.clone().add(x, currentHeight, z);
-				JedCore.plugin.getParticleAdapter().displayMagneticParticles(particleLocation);
+				com.jedk1.jedcore.JCMethods.displayMagneticParticles(particleLocation);
 			}
 		}
 	}

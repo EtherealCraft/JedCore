@@ -10,7 +10,7 @@ import com.projectkorra.projectkorra.ability.AvatarAbility;
 import com.projectkorra.projectkorra.attribute.Attribute;
 import com.projectkorra.projectkorra.region.RegionProtection;
 import com.projectkorra.projectkorra.util.DamageHandler;
-import org.bukkit.Color;
+import com.projectkorra.projectkorra.util.LightManager;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -112,7 +112,7 @@ public class SpiritBeam extends AvatarAbility implements AddonAbility {
 			}
 
 			displayBeamParticles(location, beamDirection);
-			JCMethods.emitLight(location);
+			LightManager.createLight(location).emit();
 			damageNearbyEntities(location);
 
 //<<<<<<< HEAD

@@ -1,57 +1,37 @@
 package com.jedk1.jedcore;
 
-import java.util.*;
-
-import com.jedk1.jedcore.ability.waterbending.passive.IcePassive;
-import com.jedk1.jedcore.util.*;
+import com.jedk1.jedcore.configuration.JedCoreConfig;
+import com.jedk1.jedcore.util.FireTick;
+import com.jedk1.jedcore.util.RegenTempBlock;
+import com.projectkorra.projectkorra.GeneralMethods;
+import com.projectkorra.projectkorra.ProjectKorra;
+import com.projectkorra.projectkorra.ability.CoreAbility;
 import com.projectkorra.projectkorra.ability.ElementalAbility;
 import com.projectkorra.projectkorra.ability.WaterAbility;
+import com.projectkorra.projectkorra.ability.util.ComboManager;
 import com.projectkorra.projectkorra.region.RegionProtection;
+import com.projectkorra.projectkorra.util.TempBlock;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Levelled;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 import org.bukkit.util.Vector;
 
-import com.jedk1.jedcore.configuration.JedCoreConfig;
-import com.projectkorra.projectkorra.GeneralMethods;
-import com.projectkorra.projectkorra.ProjectKorra;
-import com.projectkorra.projectkorra.ability.CoreAbility;
-import com.projectkorra.projectkorra.ability.util.ComboManager;
-import com.projectkorra.projectkorra.util.TempBlock;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class JCMethods {
 
-	// todo: either use PKs isPlant or the registry/tags (with config)
-	private static final ArrayList<Material> SMALL_PLANTS = new ArrayList<Material>(){{
-		addAll(Arrays.asList(Material.SHORT_GRASS, Material.FERN, Material.POPPY, Material.DANDELION, Material.OAK_SAPLING,
-				Material.SPRUCE_SAPLING, Material.BIRCH_SAPLING, Material.JUNGLE_SAPLING, Material.ACACIA_SAPLING,
-				Material.DARK_OAK_SAPLING, Material.ALLIUM, Material.ORANGE_TULIP, Material.PINK_TULIP, Material.RED_TULIP,
-				Material.WHITE_TULIP, Material.ROSE_BUSH, Material.BLUE_ORCHID, Material.LILAC, Material.OXEYE_DAISY,
-				Material.AZURE_BLUET, Material.PEONY, Material.SUNFLOWER, Material.LARGE_FERN, Material.RED_MUSHROOM,
-				Material.BROWN_MUSHROOM, Material.PUMPKIN_STEM, Material.MELON_STEM, Material.WHEAT, Material.TALL_GRASS,
-				Material.BEETROOTS, Material.CARROTS, Material.POTATOES, Material.CRIMSON_FUNGUS, Material.WARPED_FUNGUS,
-				Material.BAMBOO, Material.BAMBOO_SAPLING));
-
-		int serverVersion = GeneralMethods.getMCVersion();
-		if (serverVersion >= 1170) {
-			add(Material.getMaterial("AZALEA"));
-			add(Material.getMaterial("FLOWERING_AZALEA"));
-			add(Material.getMaterial("FLOWERING_AZALEA_LEAVES"));
-			add(Material.getMaterial("AZALEA_LEAVES"));
-			add(Material.getMaterial("BIG_DRIPLEAF"));
-			add(Material.getMaterial("BIG_DRIPLEAF_STEM"));
-			add(Material.getMaterial("SMALL_DRIPLEAF"));
-			add(Material.getMaterial("HANGING_ROOTS"));
-			add(Material.getMaterial("GLOW_LICHEN"));
-			add(Material.getMaterial("CAVE_VINES"));
-			add(Material.getMaterial("CAVE_VINES_PLANT"));
-		}
-	}};
 
 	private static List<String> worlds = new ArrayList<>();
 	private static List<String> combos = new ArrayList<>();
@@ -310,10 +290,10 @@ public class JCMethods {
 		return false;
 	}
 
-	// todo: see SMALL_PLANTS
 	public static boolean isDoublePlant(Material material) {
 		return material == Material.SUNFLOWER || material == Material.LILAC || material == Material.TALL_GRASS ||
-				material == Material.LARGE_FERN || material == Material.ROSE_BUSH || material == Material.PEONY;
+				material == Material.LARGE_FERN || material == Material.ROSE_BUSH || material == Material.PEONY ||
+				material == Material.PITCHER_PLANT; // + tall dry grass
 	}
 
 	public static boolean isSmallPlant(Block block) {
@@ -330,17 +310,57 @@ public class JCMethods {
 	}
 
 	public static void displayColoredParticles(String hex, Location location, int amount, double offsetX, double offsetY, double offsetZ, double extra, int alpha) {
-		JedCore.plugin.getParticleAdapter().displayColoredParticles(hex, location, amount, offsetX, offsetY, offsetZ, extra, alpha);
+		if (location.getWorld() == null) return;
+		int[] color = hexToRgb(hex);
+		location.getWorld().spawnParticle(Particle.ENTITY_EFFECT, location, amount, extra, offsetX, offsetY, offsetZ, Color.fromARGB(alpha, color[0], color[1], color[2]));
 	}
 
-	public static void emitLight(Location loc) {
-		ConfigurationSection config = JedCoreConfig.getConfig((Player)null);
-		if (config.getBoolean("Properties.Fire.DynamicLight.Enabled")) {
-			int brightness = config.getInt("Properties.Fire.DynamicLight.Brightness");
-			long keepAlive = config.getLong("Properties.Fire.DynamicLight.KeepAlive");
+	public static void displayMagneticParticles(Location location) {
+		if (location.getWorld() == null) return;
+		location.getWorld().spawnParticle(Particle.MYCELIUM, location, 1, 0, 0, 0, 0.01);
+	}
 
-			LightManager.createLight(loc).brightness(brightness).timeUntilFadeout(keepAlive).emit();
+	private static int[] hexToRgb(String hex) {
+		return new int[] {
+				Integer.valueOf(hex.substring(1, 3), 16),
+				Integer.valueOf(hex.substring(3, 5), 16),
+				Integer.valueOf(hex.substring(5, 7), 16)
+		};
+	}
+
+	public static PotionType getHarmingPotionType() {
+		return PotionType.HARMING;
+	}
+
+	public static PotionEffect getSlownessEffect(int duration, int strength) {
+		return new PotionEffect(PotionEffectType.SLOWNESS, duration / 50, strength - 1);
+	}
+
+	public static PotionEffect getResistanceEffect(int duration, int strength) {
+		return new PotionEffect(PotionEffectType.RESISTANCE, duration / 50, strength - 1);
+	}
+
+	public static PotionEffect getNauseaEffect(int duration) {
+		return new PotionEffect(PotionEffectType.NAUSEA, duration / 50, 1);
+	}
+
+	public static void applyJumpBoost(Player player, int duration, int strength) {
+		if (player.hasPotionEffect(PotionEffectType.JUMP_BOOST)) {
+			player.removePotionEffect(PotionEffectType.JUMP_BOOST);
 		}
+		player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, duration / 50, strength - 1));
+	}
+
+	public static boolean hasWaterPotion(Inventory inventory) {
+		if (inventory.contains(Material.POTION)) {
+			ItemStack item = inventory.getItem(inventory.first(Material.POTION));
+			if (item == null) return false;
+			PotionMeta meta = (PotionMeta) item.getItemMeta();
+			if (meta == null) return false;
+			PotionType potionType = meta.getBasePotionType();
+			return potionType == PotionType.WATER;
+		}
+		return false;
 	}
 
 	public static void reload() {

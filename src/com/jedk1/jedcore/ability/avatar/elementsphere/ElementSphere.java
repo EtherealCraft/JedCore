@@ -12,11 +12,8 @@ import com.projectkorra.projectkorra.ability.util.MultiAbilityManager;
 import com.projectkorra.projectkorra.ability.util.MultiAbilityManager.MultiAbilityInfoSub;
 import com.projectkorra.projectkorra.attribute.Attribute;
 import com.projectkorra.projectkorra.region.RegionProtection;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.Particle;
-import org.bukkit.World;
+import com.projectkorra.projectkorra.util.LightManager;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
@@ -341,7 +338,7 @@ public class ElementSphere extends AvatarAbility implements AddonAbility, MultiA
 			for (int i = -180; i < 180; i += 40) {
 				Location particleLoc = calculateCircularLocation(location, 2, i, 2);
 				particleLoc.getWorld().spawnParticle(fireParticle, particleLoc, 0, 0, 0, 0, 1);
-				JCMethods.emitLight(particleLoc);
+				LightManager.createLight(particleLoc).emit();
 			}
 		}
 	}

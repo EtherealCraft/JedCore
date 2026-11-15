@@ -1,62 +1,23 @@
 package com.jedk1.jedcore.listener;
 
 import com.jedk1.jedcore.JedCore;
-import com.jedk1.jedcore.ability.airbending.AirBlade;
-import com.jedk1.jedcore.ability.airbending.AirBreath;
-import com.jedk1.jedcore.ability.airbending.AirGlide;
-import com.jedk1.jedcore.ability.airbending.AirPunch;
-import com.jedk1.jedcore.ability.airbending.Meditate;
-import com.jedk1.jedcore.ability.airbending.SonicBlast;
+import com.jedk1.jedcore.ability.airbending.*;
 import com.jedk1.jedcore.ability.avatar.SpiritBeam;
 import com.jedk1.jedcore.ability.avatar.elementsphere.ElementSphere;
 import com.jedk1.jedcore.ability.chiblocking.DaggerThrow;
-import com.jedk1.jedcore.ability.earthbending.EarthKick;
-import com.jedk1.jedcore.ability.earthbending.EarthLine;
-import com.jedk1.jedcore.ability.earthbending.EarthPillar;
-import com.jedk1.jedcore.ability.earthbending.EarthShard;
-import com.jedk1.jedcore.ability.earthbending.EarthSurf;
-import com.jedk1.jedcore.ability.earthbending.Fissure;
-import com.jedk1.jedcore.ability.earthbending.LavaDisc;
-import com.jedk1.jedcore.ability.earthbending.LavaFlux;
-import com.jedk1.jedcore.ability.earthbending.LavaThrow;
-import com.jedk1.jedcore.ability.earthbending.MagnetShield;
-import com.jedk1.jedcore.ability.earthbending.MetalArmor;
-import com.jedk1.jedcore.ability.earthbending.MetalFragments;
-import com.jedk1.jedcore.ability.earthbending.MetalHook;
-import com.jedk1.jedcore.ability.earthbending.MetalShred;
-import com.jedk1.jedcore.ability.earthbending.MudSurge;
-import com.jedk1.jedcore.ability.earthbending.SandBlast;
+import com.jedk1.jedcore.ability.earthbending.*;
 import com.jedk1.jedcore.ability.earthbending.combo.Crevice;
 import com.jedk1.jedcore.ability.earthbending.combo.MagmaBlast;
-import com.jedk1.jedcore.ability.firebending.Combustion;
-import com.jedk1.jedcore.ability.firebending.Discharge;
-import com.jedk1.jedcore.ability.firebending.FireBall;
-import com.jedk1.jedcore.ability.firebending.FireBreath;
-import com.jedk1.jedcore.ability.firebending.FireComet;
-import com.jedk1.jedcore.ability.firebending.FirePunch;
-import com.jedk1.jedcore.ability.firebending.FireShots;
-import com.jedk1.jedcore.ability.firebending.FireSki;
-import com.jedk1.jedcore.ability.firebending.LightningBurst;
+import com.jedk1.jedcore.ability.firebending.*;
 import com.jedk1.jedcore.ability.passive.WallRun;
-import com.jedk1.jedcore.ability.waterbending.BloodPuppet;
-import com.jedk1.jedcore.ability.waterbending.Drain;
-import com.jedk1.jedcore.ability.waterbending.FrostBreath;
-import com.jedk1.jedcore.ability.waterbending.IceClaws;
-import com.jedk1.jedcore.ability.waterbending.IceWall;
-import com.jedk1.jedcore.ability.waterbending.WakeFishing;
+import com.jedk1.jedcore.ability.waterbending.*;
 import com.jedk1.jedcore.ability.waterbending.combo.WaterFlow;
 import com.jedk1.jedcore.ability.waterbending.combo.WaterGimbal;
 import com.projectkorra.projectkorra.BendingPlayer;
 import com.projectkorra.projectkorra.Element;
 import com.projectkorra.projectkorra.GeneralMethods;
 import com.projectkorra.projectkorra.ProjectKorra;
-import com.projectkorra.projectkorra.ability.AirAbility;
-import com.projectkorra.projectkorra.ability.AvatarAbility;
-import com.projectkorra.projectkorra.ability.ChiAbility;
-import com.projectkorra.projectkorra.ability.CoreAbility;
-import com.projectkorra.projectkorra.ability.EarthAbility;
-import com.projectkorra.projectkorra.ability.FireAbility;
-import com.projectkorra.projectkorra.ability.WaterAbility;
+import com.projectkorra.projectkorra.ability.*;
 import com.projectkorra.projectkorra.ability.util.MultiAbilityManager;
 import com.projectkorra.projectkorra.airbending.Suffocate;
 import com.projectkorra.projectkorra.earthbending.EarthArmor;
@@ -65,7 +26,6 @@ import com.projectkorra.projectkorra.earthbending.lava.LavaFlow;
 import com.projectkorra.projectkorra.firebending.FireJet;
 import com.projectkorra.projectkorra.util.MovementHandler;
 import com.projectkorra.projectkorra.waterbending.blood.Bloodbending;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -78,16 +38,23 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerAnimationEvent;
+import org.bukkit.event.player.PlayerAnimationType;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -102,6 +69,9 @@ public class AbilityListener implements Listener {
 	}
 
 	private final List<UUID> recentlyDropped = new ArrayList<>();
+	private final Set<UUID> recentlyBlockEdited = new HashSet<>();
+	private final Set<UUID> recentlyRightClickedBlock = new HashSet<>();
+	private final HashMap<UUID, Long> lastClickTime = new HashMap<>();
 
 	@EventHandler(priority = EventPriority.LOWEST)
 	// Abilities that should bypass punch cancels should be handled here.
@@ -175,6 +145,20 @@ public class AbilityListener implements Listener {
 		}
 
 		Bukkit.getScheduler().runTaskLater(ProjectKorra.plugin, () -> recentlyDropped.remove(event.getPlayer().getUniqueId()), 2L);
+	}
+
+	@EventHandler
+	public void onBlockPlace(BlockPlaceEvent event) {
+		recentlyBlockEdited.add(event.getPlayer().getUniqueId());
+
+		Bukkit.getScheduler().runTaskLater(ProjectKorra.plugin, () -> recentlyBlockEdited.remove(event.getPlayer().getUniqueId()), 2L);
+	}
+
+	@EventHandler
+	public void onBlockBreak(BlockBreakEvent event) {
+		recentlyBlockEdited.add(event.getPlayer().getUniqueId());
+
+		Bukkit.getScheduler().runTaskLater(ProjectKorra.plugin, () -> recentlyBlockEdited.remove(event.getPlayer().getUniqueId()), 2L);
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST)
@@ -371,6 +355,40 @@ public class AbilityListener implements Listener {
 		}
 	}
 
+	@EventHandler(priority = EventPriority.NORMAL)
+	public void onPlayerAnimation(PlayerAnimationEvent event) {
+		if (event.getAnimationType() != PlayerAnimationType.ARM_SWING) {
+			return;
+		}
+
+		Player player = event.getPlayer();
+		BendingPlayer bPlayer = BendingPlayer.getBendingPlayer(player);
+		if (bPlayer == null) {
+			return;
+		}
+
+		UUID playerId = player.getUniqueId();
+		if (recentlyDropped.contains(playerId) || recentlyBlockEdited.contains(playerId) || recentlyRightClickedBlock.contains(playerId)) {
+			return;
+		}
+
+		long currentTime = System.currentTimeMillis();
+		Long lastClick = lastClickTime.get(playerId);
+		if (lastClick != null && currentTime - lastClick < 100L) {
+			return;
+		}
+		lastClickTime.put(playerId, currentTime);
+
+		if (!"EarthBlast".equalsIgnoreCase(bPlayer.getBoundAbilityName())) {
+			return;
+		}
+
+		boolean isSneaking = player.isSneaking();
+		for (EarthBlastAbility hurl : CoreAbility.getAbilities(player, EarthBlastAbility.class)) {
+			hurl.handleLeftClick(isSneaking);
+		}
+	}
+
 	public static ConcurrentHashMap<UUID, Long> recent = new ConcurrentHashMap<UUID, Long>();
 
 	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -409,6 +427,25 @@ public class AbilityListener implements Listener {
 		if (bPlayer.isChiBlocked()) {
 			event.setCancelled(true);
 			return;
+		}
+
+		if (event.isSneaking() && abilClass.equals(EarthBlastAbility.class) && bPlayer.canBend(coreAbil)) {
+			Collection<EarthBlastAbility> hurls = CoreAbility.getAbilities(player, EarthBlastAbility.class);
+
+			if (!hurls.isEmpty()) {
+				int maxHurls = hurls.iterator().next().getMaxHurls();
+				if (hurls.size() >= maxHurls) {
+					return;
+				}
+
+				for (EarthBlastAbility hurl : hurls) {
+					if (hurl.isReadyOrSelected()) {
+						return;
+					}
+				}
+			}
+
+			new EarthBlastAbility(player);
 		}
 
 		if (player.isSneaking() && bPlayer.canBendIgnoreCooldowns(coreAbil)) {
@@ -573,6 +610,10 @@ public class AbilityListener implements Listener {
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void onPlayerInteraction(PlayerInteractEvent event) {
 		if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+			UUID playerId = event.getPlayer().getUniqueId();
+			recentlyRightClickedBlock.add(playerId);
+			Bukkit.getScheduler().runTaskLater(ProjectKorra.plugin, () -> recentlyRightClickedBlock.remove(playerId), 2L);
+
 			MetalFragments.shootFragment(event.getPlayer());
 		}
 	}

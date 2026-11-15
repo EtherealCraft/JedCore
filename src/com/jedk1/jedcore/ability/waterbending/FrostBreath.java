@@ -1,13 +1,15 @@
 package com.jedk1.jedcore.ability.waterbending;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import com.jedk1.jedcore.JCMethods;
+import com.jedk1.jedcore.JedCore;
 import com.jedk1.jedcore.configuration.JedCoreConfig;
+import com.projectkorra.projectkorra.GeneralMethods;
+import com.projectkorra.projectkorra.ability.AddonAbility;
+import com.projectkorra.projectkorra.ability.IceAbility;
 import com.projectkorra.projectkorra.command.Commands;
 import com.projectkorra.projectkorra.region.RegionProtection;
+import com.projectkorra.projectkorra.util.DamageHandler;
+import com.projectkorra.projectkorra.util.TempBlock;
 import com.projectkorra.projectkorra.waterbending.ice.PhaseChange;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -19,13 +21,9 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
-import com.jedk1.jedcore.JedCore;
-import com.projectkorra.projectkorra.GeneralMethods;
-import com.projectkorra.projectkorra.ability.AddonAbility;
-import com.projectkorra.projectkorra.ability.IceAbility;
-import com.projectkorra.projectkorra.util.DamageHandler;
-
-import com.projectkorra.projectkorra.util.TempBlock;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class FrostBreath extends IceAbility implements AddonAbility {
 
@@ -33,13 +31,11 @@ public class FrostBreath extends IceAbility implements AddonAbility {
 		addAll(Arrays.asList(
 				Material.ICE,
 				Material.LAVA,
-				Material.AIR,
-				Material.VOID_AIR,
-				Material.CAVE_AIR));
-		if (GeneralMethods.getMCVersion() >= 1170) {
-			add(Material.getMaterial("LIGHT"));
-		}
-	}};
+		Material.AIR,
+		Material.VOID_AIR,
+		Material.CAVE_AIR,
+		Material.LIGHT));
+    }};
 
 	//Savannas are 1.0 temp with 0 humidity. Deserts are 2.0 temp with 0 humidity.
 	private static float MAX_TEMP = 1.0F;
@@ -261,7 +257,7 @@ public class FrostBreath extends IceAbility implements AddonAbility {
 						}
 
 						if (config.slowEnabled) {
-							((LivingEntity) entity).addPotionEffect(JedCore.plugin.getPotionEffectAdapter().getSlownessEffect((int) config.slowDuration, 5));
+							((LivingEntity) entity).addPotionEffect(com.jedk1.jedcore.JCMethods.getSlownessEffect((int) config.slowDuration, 5));
 						}
 
 						if (config.damageEnabled) {
@@ -278,7 +274,7 @@ public class FrostBreath extends IceAbility implements AddonAbility {
 					freezeGround(loc);
 				}
 
-				loc.getWorld().spawnParticle(Particle.ITEM_SNOWBALL, loc, config.particles, Math.random(), Math.random(), Math.random(), size);
+				loc.getWorld().spawnParticle(Particle.POOF, loc, config.particles, Math.random(), Math.random(), Math.random(), size);
 
 				JCMethods.displayColoredParticles("#DCDCDC", loc, 1, Math.random(), Math.random(), Math.random(), 0.003f);
 				JCMethods.displayColoredParticles("#9696FF", loc, 1, Math.random(), Math.random(), Math.random(), 0.0035f);

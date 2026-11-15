@@ -100,7 +100,7 @@ public class Meditate extends AirAbility implements AddonAbility {
 
 		player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, boostDuration/50, speedBoost - 1));
 
-		JedCore.plugin.getPotionEffectAdapter().applyJumpBoost(player, boostDuration, jumpBoost);
+		com.jedk1.jedcore.JCMethods.applyJumpBoost(player, boostDuration, jumpBoost);
 
 		if (player.hasPotionEffect(PotionEffectType.ABSORPTION)) {
 			player.removePotionEffect(PotionEffectType.ABSORPTION);

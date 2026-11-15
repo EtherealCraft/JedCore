@@ -11,7 +11,7 @@ import com.projectkorra.projectkorra.ability.AddonAbility;
 import com.projectkorra.projectkorra.ability.BlueFireAbility;
 import com.projectkorra.projectkorra.ability.FireAbility;
 import com.projectkorra.projectkorra.attribute.Attribute;
-
+import com.projectkorra.projectkorra.util.LightManager;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.World;
@@ -175,7 +175,7 @@ public class FireSki extends FireAbility implements AddonAbility {
 			size += 0.05;
 			playFirebendingParticles(l, 4, (Math.random() * size + 0.01), (Math.random() * size + 0.01), (Math.random() * size + 0.01));
 			l.getWorld().spawnParticle(Particle.SMOKE, l, 1, (Math.random() * size + 0.01), (Math.random() * size + 0.01), (Math.random() * size + 0.01), 0.08);
-			JCMethods.emitLight(l);
+			LightManager.createLight(l).emit();
 		}
 
 		size = 0;
@@ -183,7 +183,7 @@ public class FireSki extends FireAbility implements AddonAbility {
 			size += 0.05;
 			playFirebendingParticles(l, 4, (Math.random() * size + 0.01), (Math.random() * size + 0.01), (Math.random() * size + 0.01));
 			l.getWorld().spawnParticle(Particle.SMOKE, l, 1, (Math.random() * size + 0.01), (Math.random() * size + 0.01), (Math.random() * size + 0.01), 0.08);
-			JCMethods.emitLight(l);
+			LightManager.createLight(l).emit();
 		}
 	}
 

@@ -5,13 +5,13 @@ import com.jedk1.jedcore.configuration.JedCoreConfig;
 import com.projectkorra.projectkorra.GeneralMethods;
 import com.projectkorra.projectkorra.ability.AddonAbility;
 import com.projectkorra.projectkorra.ability.EarthAbility;
+import com.projectkorra.projectkorra.ability.ElementalAbility;
 import com.projectkorra.projectkorra.ability.LavaAbility;
 import com.projectkorra.projectkorra.attribute.Attribute;
 import com.projectkorra.projectkorra.firebending.util.FireDamageTimer;
 import com.projectkorra.projectkorra.region.RegionProtection;
 import com.projectkorra.projectkorra.util.DamageHandler;
 import com.projectkorra.projectkorra.util.Information;
-
 import com.projectkorra.projectkorra.util.TempBlock;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -28,11 +28,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class LavaFlux extends LavaAbility implements AddonAbility {
 
@@ -188,12 +184,12 @@ public class LavaFlux extends LavaAbility implements AddonAbility {
 					above.getLocation().getWorld().spawnParticle(Particle.LAVA, above.getLocation(), 2, Math.random(), Math.random(), Math.random(), 0);
 					applyDamageFromWave(above.getLocation());
 
-					if (isPlant(above) || isSnow(above)) {
+					if (ElementalAbility.isPlant(above) || ElementalAbility.isSnow(above)) {
 						final Block above2 = above.getRelative(BlockFace.UP);
-						if (isPlant(above) || isSnow(above)) {
+						if (ElementalAbility.isPlant(above) || ElementalAbility.isSnow(above)) {
 							TempBlock tb = new TempBlock(above, Material.AIR.createBlockData(), duration + cleanup, this);
 							this.above.put(above, tb);
-							if (isPlant(above2) && above2.getBlockData() instanceof Bisected) {
+							if (ElementalAbility.isPlant(above2) && above2.getBlockData() instanceof Bisected) {
 								TempBlock tb2 = new TempBlock(above2, Material.AIR.createBlockData(), duration + cleanup + 30_000, this);
 								tb.addAttachedBlock(tb2);
 							}

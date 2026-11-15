@@ -189,7 +189,7 @@ public class WaterGimbal extends WaterAbility implements AddonAbility, ComboAbil
 			// All of these extra checks need to be done because PK sourcing system is buggy.
 			boolean usingSnow = snowSourcing && (sourceBlock.getType() == Material.SNOW_BLOCK || sourceBlock.getType() == Material.SNOW);
 
-			if (isPlant(sourceBlock) || usingSnow) {
+			if (ElementalAbility.isPlant(sourceBlock) || usingSnow) {
 				if (usingSnow || !requireAdjacentPlants || JCMethods.isAdjacentToThreeOrMoreSources(sourceBlock, sourceBlock.getType())) {
 					playFocusWaterEffect(sourceBlock);
 					sourceLoc = sourceBlock.getLocation();
@@ -236,7 +236,7 @@ public class WaterGimbal extends WaterAbility implements AddonAbility, ComboAbil
 	// This is to get around the WaterReturn limitation since OctopusForm will currently be using the bottle.
 	private boolean hasWaterBottle(Player player) {
 		PlayerInventory inventory = player.getInventory();
-		return JedCore.plugin.getPotionEffectAdapter().hasWaterPotion(inventory);
+		return com.jedk1.jedcore.JCMethods.hasWaterPotion(inventory);
 	}
 
 	public static void prepareBlast(Player player) {
